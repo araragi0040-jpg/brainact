@@ -1,0 +1,45 @@
+{
+  "format": "virtual-brain-dataset-v1",
+  "source": {
+    "name": "v013サンプル外部データ",
+    "version": "1.0",
+    "url": "",
+    "license": "sample"
+  },
+  "coordinateSpace": "normalized",
+  "regions": [
+    {
+      "id": "V1",
+      "name": "一次視覚野（サンプル座標）",
+      "evidence": "サンプル外部データ",
+      "lateral": 0.55,
+      "vertical": 0.1,
+      "depth": -0.75,
+      "count": 12
+    },
+    {
+      "id": "HIP",
+      "name": "海馬（サンプル座標）",
+      "evidence": "サンプル外部データ",
+      "lateral": 0.32,
+      "vertical": -0.3,
+      "depth": -0.05,
+      "count": 12
+    },
+    {
+      "id": "PFC",
+      "name": "背外側前頭前野（サンプル座標）",
+      "evidence": "サンプル外部データ",
+      "lateral": 0.5,
+      "vertical": 0.25,
+      "depth": 0.72,
+      "count": 14
+    }
+  ],
+  "connections": [
+    { "source": "V1", "target": "V2", "weight": 0.95, "evidence": "サンプル" },
+    { "source": "V2", "target": "HIP", "weight": 0.68, "evidence": "サンプル" },
+    { "source": "HIP", "target": "PFC", "weight": 0.82, "evidence": "サンプル" },
+    { "source": "PFC", "target": "HIP", "weight": 0.55, "evidence": "サンプル" }
+  ]
+}

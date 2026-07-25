@@ -1,0 +1,5 @@
+source,target,weight,evidence
+V1,V2,0.95,CSVサンプル
+V2,HIP,0.68,CSVサンプル
+HIP,PFC,0.82,CSVサンプル
+PFC,HIP,0.55,CSVサンプル
