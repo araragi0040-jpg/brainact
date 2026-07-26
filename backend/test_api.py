@@ -1,4 +1,7 @@
 from fastapi.testclient import TestClient
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from api.index import app
 
@@ -10,14 +13,14 @@ def test_health() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["status"] == "ok"
-    assert payload["version"] == "v018"
+    assert payload["version"] == "v021"
     assert "brian2" in payload
 
 
 def test_diagnostics() -> None:
     response = client.get("/api/v1/diagnostics")
     assert response.status_code == 200
-    assert response.json()["version"] == "v018"
+    assert response.json()["version"] == "v021"
 
 
 def test_engine_adapters() -> None:
@@ -36,7 +39,7 @@ def test_native_self_test() -> None:
 
 def test_native_simulation() -> None:
     request = {
-        "version": "v018",
+        "version": "v021",
         "engine_id": "native",
         "steps": 2,
         "dt": 0.02,
@@ -114,7 +117,7 @@ def test_brian2_self_test_reports_missing_package_when_unavailable() -> None:
 
 def test_compare_native_and_missing_engine() -> None:
     base = {
-        "version": "v018", "engine_id": "native", "steps": 2, "dt": 0.02, "rng_state": 42,
+        "version": "v021", "engine_id": "native", "steps": 2, "dt": 0.02, "rng_state": 42,
         "nodes": [{"id":0,"regionId":"A","type":"excitatory","voltage":1.2,"baseThreshold":1.0,"leak":.88,"refractory":0,"refractoryBase":2,"fatigue":0,"fatigueRecovery":.018,"fatigueGain":.025,"adaptation":0,"adaptationRecovery":.055,"adaptationGain":.018,"homeostaticOffset":0,"homeostaticTarget":.045}],
         "edges": [], "regions": ["A"], "config": {"noise": False, "plasticity": False}
     }
@@ -131,7 +134,7 @@ def test_regional_mass_self_test() -> None:
 
 def test_regional_mass_simulation() -> None:
     request={
-        "version":"v018","engine_id":"regional-mass","steps":3,"dt":0.02,"rng_state":1,
+        "version":"v021","engine_id":"regional-mass","steps":3,"dt":0.02,"rng_state":1,
         "nodes":[{"id":0,"regionId":"A","type":"excitatory","voltage":0.1,"baseThreshold":1.0}],
         "edges":[],"regions":["A"],"config":{},
         "stimulus_sequence":{"phase":"active","regions":["A"],"strength":1.5,"duration":2,"remaining":2,"repeats":1,"currentRepeat":1}
@@ -139,3 +142,15 @@ def test_regional_mass_simulation() -> None:
     response=client.post("/api/v1/simulate",json=request)
     assert response.status_code==200,response.text
     data=response.json(); assert data["engineId"]=="regional-mass"; assert len(data["frames"])==3
+
+
+def test_multiscale_self_test() -> None:
+    response=client.post("/api/v1/engines/multiscale/self-test",json={})
+    assert response.status_code==200
+    assert response.json()["engineId"]=="multiscale-hybrid-v1"
+
+def test_multiscale_simulation() -> None:
+    request={"version":"v021","engine_id":"multiscale","steps":3,"dt":.02,"nodes":[{"id":0,"regionId":"A","type":"excitatory","voltage":1.2,"baseThreshold":1.,"leak":.88,"hemisphere":"left"},{"id":1,"regionId":"B","type":"excitatory","voltage":0.,"baseThreshold":1.,"leak":.88,"hemisphere":"right"}],"edges":[{"source":0,"target":1,"sourceRegionId":"A","targetRegionId":"B","weight":.5}],"regions":["A","B"],"config":{"multiscaleFocusRegion":"A","multiscaleCoupling":.5}}
+    response=client.post("/api/v1/simulate",json=request)
+    assert response.status_code==200,response.text
+    data=response.json(); assert data["engineId"]=="multiscale"; assert data["engineDetails"]["focusRegion"]=="A"; assert len(data["frames"])==3

@@ -476,7 +476,7 @@ body.analysis-open { overflow: hidden !important; }
   #dataSourceBadge { display: none; }
 }
 
-/* v018: Python計算エンジン接続 */
+/* v021: Python計算エンジン接続 */
 .engine-status { margin-top: 10px; line-height: 1.55; }
 .engine-status.active { border-color: rgba(77,217,196,.30); background: rgba(77,217,196,.06); color: var(--text); }
 .engine-status.busy { border-color: rgba(255,200,103,.32); background: rgba(255,200,103,.055); color: #ffe4ac; }
@@ -492,7 +492,7 @@ body.analysis-open { overflow: hidden !important; }
   #engineBadge { display: none; }
 }
 
-/* v018: GitHub / Vercel deployment diagnostics */
+/* v021: GitHub / Vercel deployment diagnostics */
 .deployment-status { margin-top: 9px; padding: 10px 11px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.025); font-size: 10px; line-height: 1.55; color: var(--muted); overflow-wrap: anywhere; }
 .deployment-status strong { display: block; color: var(--text); font-size: 11px; margin-bottom: 3px; }
 .deployment-status small { display: block; color: var(--muted); }
@@ -500,7 +500,7 @@ body.analysis-open { overflow: hidden !important; }
 .deployment-status.warn { border-color: rgba(255,200,103,.28); background: rgba(255,200,103,.06); }
 .deployment-status.error { border-color: rgba(255,127,145,.28); background: rgba(255,127,145,.06); }
 
-/* v018: external simulation engine adapters */
+/* v021: external simulation engine adapters */
 .adapter-status {
   margin: 8px 0 10px;
   padding: 10px 11px;
@@ -519,3 +519,15 @@ body.analysis-open { overflow: hidden !important; }
 .adapter-status.active { border-color: rgba(77,217,196,.28); background: rgba(77,217,196,.055); }
 .adapter-status.warn { border-color: rgba(255,200,103,.30); background: rgba(255,200,103,.055); }
 #engineAdapter:disabled { opacity: .58; cursor: not-allowed; }
+
+.multiscale-panel { position: relative; }
+.multiscale-status.active { color: var(--text); border: 1px solid rgba(77,217,196,.24); background: rgba(77,217,196,.07); padding: 10px; border-radius: 10px; }
+.multiscale-status strong,.multiscale-status small { display:block; }
+.multiscale-status small { margin-top:4px;color:var(--muted);line-height:1.5; }
+
+.hierarchy-breadcrumb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0;padding:8px;border-radius:9px;background:rgba(112,167,255,.06);font-size:10px;color:var(--muted)}
+.hierarchy-breadcrumb b{color:var(--accent)}.hierarchy-levels{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}.hierarchy-levels button.active{background:var(--accent);color:#071017;border-color:transparent;font-weight:800}.hierarchy-status strong,.hierarchy-status small{display:block}.hierarchy-status small{margin-top:4px}.hierarchy-local-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:2;display:block;cursor:crosshair}.hierarchy-local-canvas.hidden{display:none}
+
+.reference-mesh-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}.reference-mesh-canvas.hidden{display:none}.reference-mesh-status{padding:10px;border-radius:10px;border:1px solid rgba(112,167,255,.2);background:rgba(112,167,255,.06)}.reference-mesh-status strong,.reference-mesh-status small{display:block}.reference-mesh-status small{margin-top:4px;color:var(--muted)}.mesh-error{border-color:rgba(255,127,145,.25);color:var(--danger)}
+
+.region-labels{z-index:4}

@@ -54,11 +54,19 @@ class EngineAdapter:
 
 
 ADAPTERS: dict[str, EngineAdapter] = {
+    "multiscale": EngineAdapter(
+        id="multiscale", name="Hybrid Multiscale", scale="全脳領域＋局所ニューロン",
+        description="全脳を領域質量モデル、選択領域を点ニューロンとして同時計算する内蔵ハイブリッドモデルです。",
+        package=None, execution_implemented=True, serverless_recommended=True,
+        supported_features=("全脳領域活動", "選択領域の個別発火", "双方向結合", "Vercel直接計算"),
+        limited_features=("局所回路は1領域", "結合則は概念近似", "混合出力単位"),
+        unsupported_features=("生物学的に検証済みのマルチスケール結合",),
+    ),
     "native": EngineAdapter(
         id="native",
         name="Virtual Brain Native",
         scale="ニューロン／領域の概念モデル",
-        description="v018標準の独自Python計算エンジン。現在の全機能を最も忠実に処理します。",
+        description="v021標準の独自Python計算エンジン。現在の全機能を最も忠実に処理します。",
         package=None,
         execution_implemented=True,
         serverless_recommended=True,
@@ -208,10 +216,10 @@ def compatibility_report(
         warnings.append(f"Pythonパッケージ「{adapter.package}」は現在の実行環境で検出されていません。")
         score -= 20
     if not adapter.execution_implemented:
-        warnings.append("v018ではこの外部エンジンの直接計算は未実装です。互換性診断と変換設定書き出しを利用してください。")
+        warnings.append("v021ではこの外部エンジンの直接計算は未実装です。互換性診断と変換設定書き出しを利用してください。")
 
     return {
-        "version": "v018",
+        "version": "v021",
         "engine": adapter.public_dict(),
         "score": max(0, min(100, score)),
         "summary": {
@@ -281,7 +289,7 @@ def export_manifest(
 
     manifest = {
         "schema": "virtual-brain-adapter-manifest-v1",
-        "version": "v018",
+        "version": "v021",
         "targetEngine": engine_id,
         "adapter": adapter.public_dict(),
         "compatibility": report,
@@ -304,12 +312,12 @@ def export_manifest(
 def starter_code(engine_id: str, manifest: dict[str, Any]) -> str:
     network = manifest["network"]
     if engine_id == "brian2":
-        return f'''# v018 Brian2 translation starter\nfrom brian2 import *\n\nstart_scope()\ndefaultclock.dt = 0.1*ms\nN = {network["nodeCount"]}\neqs = """\ndv/dt = (-v) / (10*ms) : 1\n"""\nneurons = NeuronGroup(N, eqs, threshold="v > 1", reset="v = 0", refractory=2*ms, method="euler")\n# TODO: manifestのedge情報をSynapsesへ対応付ける\nrun(100*ms)\n'''
+        return f'''# v021 Brian2 translation starter\nfrom brian2 import *\n\nstart_scope()\ndefaultclock.dt = 0.1*ms\nN = {network["nodeCount"]}\neqs = """\ndv/dt = (-v) / (10*ms) : 1\n"""\nneurons = NeuronGroup(N, eqs, threshold="v > 1", reset="v = 0", refractory=2*ms, method="euler")\n# TODO: manifestのedge情報をSynapsesへ対応付ける\nrun(100*ms)\n'''
     if engine_id == "nest":
-        return f'''# v018 NEST translation starter\nimport nest\n\nnest.ResetKernel()\nnodes = nest.Create("iaf_psc_alpha", {network["nodeCount"]})\n# TODO: manifestの接続をConnectへ対応付ける\nnest.Simulate(100.0)\n'''
+        return f'''# v021 NEST translation starter\nimport nest\n\nnest.ResetKernel()\nnodes = nest.Create("iaf_psc_alpha", {network["nodeCount"]})\n# TODO: manifestの接続をConnectへ対応付ける\nnest.Simulate(100.0)\n'''
     if engine_id == "tvb":
-        return f'''# v018 TVB translation starter\n# pip install tvb-library\nfrom tvb.simulator.lab import connectivity, coupling, integrators, models, simulator\n\n# TODO: {len(network["regions"])}領域のweights / tract_lengths / centresをmanifestから構築\n# conn = connectivity.Connectivity(...)\n# sim = simulator.Simulator(model=models.ReducedWongWang(), connectivity=conn, ...)\n'''
-    return '''# v018 native engine\n# 現在のアプリ／APIでそのまま実行できます。\n'''
+        return f'''# v021 TVB translation starter\n# pip install tvb-library\nfrom tvb.simulator.lab import connectivity, coupling, integrators, models, simulator\n\n# TODO: {len(network["regions"])}領域のweights / tract_lengths / centresをmanifestから構築\n# conn = connectivity.Connectivity(...)\n# sim = simulator.Simulator(model=models.ReducedWongWang(), connectivity=conn, ...)\n'''
+    return '''# v021 native engine\n# 現在のアプリ／APIでそのまま実行できます。\n'''
 
 
 def dumps_manifest(manifest: dict[str, Any]) -> str:

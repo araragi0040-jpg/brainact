@@ -2,20 +2,21 @@
   'use strict';
 
   const RUNTIME_CONFIG = window.VIRTUAL_BRAIN_CONFIG || {};
-  const MODEL_VERSION = RUNTIME_CONFIG.appVersion || 'v018';
-  const STORAGE_KEY = 'virtual-brain-v018-experiments';
-  const SCENARIO_STORAGE_KEY = 'virtual-brain-v018-scenarios';
-  const LEGACY_STORAGE_KEYS = ['virtual-brain-v014-experiments', 'virtual-brain-v013-experiments', 'virtual-brain-v012-experiments', 'virtual-brain-v011-experiments', 'virtual-brain-v010-experiments', 'virtual-brain-v009-experiments', 'virtual-brain-v008-experiments', 'virtual-brain-v007-experiments', 'virtual-brain-v006-experiments', 'virtual-brain-v005-experiments', 'virtual-brain-v004-experiments', 'virtual-brain-v003-experiments', 'virtual-brain-v002-experiments'];
-  const LEGACY_SCENARIO_STORAGE_KEYS = ['virtual-brain-v014-scenarios', 'virtual-brain-v013-scenarios', 'virtual-brain-v012-scenarios', 'virtual-brain-v011-scenarios', 'virtual-brain-v010-scenarios', 'virtual-brain-v009-scenarios', 'virtual-brain-v008-scenarios', 'virtual-brain-v007-scenarios', 'virtual-brain-v006-scenarios', 'virtual-brain-v005-scenarios'];
-  const DATASET_STORAGE_KEY = 'virtual-brain-v018-dataset';
-  const LEGACY_DATASET_STORAGE_KEYS = ['virtual-brain-v014-dataset', 'virtual-brain-v013-dataset', 'virtual-brain-v012-dataset', 'virtual-brain-v011-dataset'];
-  const ENGINE_STORAGE_KEY = 'virtual-brain-v018-engine';
-  const LEGACY_ENGINE_STORAGE_KEYS = ['virtual-brain-v014-engine', 'virtual-brain-v013-engine', 'virtual-brain-v012-engine'];
+  const MODEL_VERSION = RUNTIME_CONFIG.appVersion || 'v021';
+  const STORAGE_KEY = 'virtual-brain-v021-experiments';
+  const SCENARIO_STORAGE_KEY = 'virtual-brain-v021-scenarios';
+  const LEGACY_STORAGE_KEYS = ['virtual-brain-v020-experiments', 'virtual-brain-v018-experiments', 'virtual-brain-v014-experiments', 'virtual-brain-v013-experiments', 'virtual-brain-v012-experiments', 'virtual-brain-v011-experiments', 'virtual-brain-v010-experiments', 'virtual-brain-v009-experiments', 'virtual-brain-v008-experiments', 'virtual-brain-v007-experiments', 'virtual-brain-v006-experiments', 'virtual-brain-v005-experiments', 'virtual-brain-v004-experiments', 'virtual-brain-v003-experiments', 'virtual-brain-v002-experiments'];
+  const LEGACY_SCENARIO_STORAGE_KEYS = ['virtual-brain-v020-scenarios', 'virtual-brain-v018-scenarios', 'virtual-brain-v014-scenarios', 'virtual-brain-v013-scenarios', 'virtual-brain-v012-scenarios', 'virtual-brain-v011-scenarios', 'virtual-brain-v010-scenarios', 'virtual-brain-v009-scenarios', 'virtual-brain-v008-scenarios', 'virtual-brain-v007-scenarios', 'virtual-brain-v006-scenarios', 'virtual-brain-v005-scenarios'];
+  const DATASET_STORAGE_KEY = 'virtual-brain-v021-dataset';
+  const LEGACY_DATASET_STORAGE_KEYS = ['virtual-brain-v020-dataset', 'virtual-brain-v018-dataset', 'virtual-brain-v014-dataset', 'virtual-brain-v013-dataset', 'virtual-brain-v012-dataset', 'virtual-brain-v011-dataset'];
+  const ENGINE_STORAGE_KEY = 'virtual-brain-v021-engine';
+  const LEGACY_ENGINE_STORAGE_KEYS = ['virtual-brain-v020-engine', 'virtual-brain-v018-engine', 'virtual-brain-v014-engine', 'virtual-brain-v013-engine', 'virtual-brain-v012-engine'];
   const DATASET_FORMAT = 'virtual-brain-dataset-v1';
   const DT = 0.02;
   const HISTORY_LIMIT = 240;
   const ANALYSIS_HISTORY_LIMIT = 1200;
   const MAX_EVENTS = 24;
+  const EXTENSIONS = window.VBL_EXTENSIONS = Array.isArray(window.VBL_EXTENSIONS) ? window.VBL_EXTENSIONS : [];
 
   let REGIONS = [
     { id: 'V1', name: '一次視覚野', short: 'V1', x: 0.07, y: 0.15, count: 10, lateral: 0.48, vertical: 0.08, depth: -0.78, system: '感覚系', lobe: '後頭葉', level: '皮質', parent: '視覚系', functions: '輪郭・方位・初期視覚処理', evidence: '解剖学名称に基づく概念モデル' },
@@ -915,7 +916,7 @@
   }
 
   function remoteSimulationPayload(steps) {
-    return {
+    let payload = {
       version: MODEL_VERSION,
       engine_id: state.engine.adapterId || 'native',
       steps,
@@ -943,6 +944,10 @@
       route_stats: state.analysis.routeStats,
       engine_state: state.engine.engineState || {}
     };
+    for (const extension of EXTENSIONS) {
+      if (typeof extension.augmentPayload === 'function') payload = extension.augmentPayload(payload) || payload;
+    }
+    return payload;
   }
 
   function reindexRemoteNetwork() {
@@ -1063,6 +1068,7 @@
       state.engine.engineState = response.engineState || state.engine.engineState || {};
       state.engine.engineDetails = response.engineDetails || null;
       if (response.engineId) state.engine.adapterId = response.engineId;
+      for (const extension of EXTENSIONS) { if (typeof extension.onRemoteResponse === 'function') extension.onRemoteResponse(response); }
       reindexRemoteNetwork();
       for (const frame of response.frames || []) appendRemoteFrame(frame);
       state.totalSpikes = Number(response.totalSpikes ?? state.totalSpikes);
@@ -1382,12 +1388,12 @@
     return {
       format: DATASET_FORMAT,
       source: {
-        name: template ? 'v018ひな型データ' : descriptor.name,
+        name: template ? 'v021ひな型データ' : descriptor.name,
         version: template ? '1.0' : descriptor.version,
         url: '', license: ''
       },
       coordinateSpace: template ? 'normalized' : descriptor.coordinateSpace,
-      note: template ? '既存19領域のIDを使用してください。connectionsのweightは0〜1または0.05〜7.5を利用できます。' : 'v018から書き出した現在の領域・接続設定',
+      note: template ? '既存19領域のIDを使用してください。connectionsのweightは0〜1または0.05〜7.5を利用できます。' : 'v021から書き出した現在の領域・接続設定',
       regions,
       connections: connectionEntries.map(([key, weight]) => {
         const [source, target] = key.split('>');
@@ -2405,8 +2411,13 @@
     const activeRegionCount = REGIONS.filter(region => state.lastRegionStepCounts[region.id] > 0).length;
     els.stepCount.textContent = String(state.step);
     els.simTime.textContent = state.simTime.toFixed(2);
-    els.totalSpikes.textContent = String(state.totalSpikes);
-    els.peakSpikes.textContent = String(state.peakSpikes);
+    const outputMeaning = String(state.engine.engineDetails?.outputMeaning || 'literal spikes');
+    const activityOutput = outputMeaning.includes('activity') || outputMeaning.includes('mixed');
+    els.totalSpikes.parentElement.childNodes[0].nodeValue = activityOutput ? '総出力 ' : '総発火 ';
+    els.peakSpikes.parentElement.childNodes[0].nodeValue = activityOutput ? '出力ピーク ' : 'ピーク ';
+    els.avgSpikes.parentElement.childNodes[0].nodeValue = activityOutput ? '平均出力 ' : '平均 ';
+    els.totalSpikes.textContent = Number(state.totalSpikes).toFixed(activityOutput ? 1 : 0);
+    els.peakSpikes.textContent = Number(state.peakSpikes).toFixed(activityOutput ? 1 : 0);
     els.avgSpikes.textContent = avg.toFixed(1);
     els.activeRegions.textContent = String(activeRegionCount);
     renderModelMonitor();
@@ -4674,7 +4685,7 @@
       ? [...state.propagation.arrivals.entries()].sort((a, b) => a[1].offset - b[1].offset).map(([regionId, item]) => `<tr><th>${escapeHtml(REGION_BY_ID.get(regionId)?.name || regionId)}</th><td>${item.step}</td><td>+${item.offset}</td></tr>`).join('')
       : '<tr><td colspan="3">到達記録なし</td></tr>';
     const generatedAt = new Date().toLocaleString('ja-JP');
-    const html = `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>仮想神経回路 v018 分析レポート</title><style>body{margin:0;background:#f3f6f8;color:#172630;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}main{max-width:1050px;margin:auto;padding:34px 20px}.card,header{background:#fff;border:1px solid #dce5ea;border-radius:14px;padding:20px;margin-bottom:15px}h1{margin:3px 0 7px;font-size:25px}h2{font-size:17px;margin:0 0 12px}p{line-height:1.7;color:#506876}small{color:#738895}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid #e6edf1;text-align:right}th:first-child{text-align:left}.note{background:#f6f9fa;padding:13px;border-radius:9px}.warn{font-size:12px}</style></head><body><main><header><small>VIRTUAL BRAIN LAB / ${MODEL_VERSION}</small><h1>実験結果の詳細分析</h1><p>生成日時：${escapeHtml(generatedAt)} / 分析範囲：${summary.records.length} step / step ${summary.records[0].step}〜${summary.records[summary.records.length - 1].step}</p></header><section class="card"><h2>自動要約</h2><div class="note">${escapeHtml(interpretation)}</div></section><section class="card"><h2>領域別活動</h2><table><thead><tr><th>領域</th><th>発火</th><th>興奮性</th><th>抑制性</th></tr></thead><tbody>${regionRows}</tbody></table></section><section class="card"><h2>刺激後の初回到達</h2><table><thead><tr><th>領域</th><th>step</th><th>遅延</th></tr></thead><tbody>${arrivalRows}</tbody></table></section><section class="card"><h2>信号経路</h2><table><thead><tr><th>経路</th><th>通過</th><th>興奮</th><th>抑制</th><th>|信号|</th></tr></thead><tbody>${routeRows || '<tr><td colspan="5">信号記録なし</td></tr>'}</tbody></table></section><section class="card warn"><strong>注意</strong><p>本レポートはv018概念モデル内部の仮想計算結果です。相関は直接接続や因果関係を示さず、人間の脳活動、診断、治療効果を示すものではありません。</p></section></main></body></html>`;
+    const html = `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>仮想神経回路 v021 分析レポート</title><style>body{margin:0;background:#f3f6f8;color:#172630;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}main{max-width:1050px;margin:auto;padding:34px 20px}.card,header{background:#fff;border:1px solid #dce5ea;border-radius:14px;padding:20px;margin-bottom:15px}h1{margin:3px 0 7px;font-size:25px}h2{font-size:17px;margin:0 0 12px}p{line-height:1.7;color:#506876}small{color:#738895}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid #e6edf1;text-align:right}th:first-child{text-align:left}.note{background:#f6f9fa;padding:13px;border-radius:9px}.warn{font-size:12px}</style></head><body><main><header><small>VIRTUAL BRAIN LAB / ${MODEL_VERSION}</small><h1>実験結果の詳細分析</h1><p>生成日時：${escapeHtml(generatedAt)} / 分析範囲：${summary.records.length} step / step ${summary.records[0].step}〜${summary.records[summary.records.length - 1].step}</p></header><section class="card"><h2>自動要約</h2><div class="note">${escapeHtml(interpretation)}</div></section><section class="card"><h2>領域別活動</h2><table><thead><tr><th>領域</th><th>発火</th><th>興奮性</th><th>抑制性</th></tr></thead><tbody>${regionRows}</tbody></table></section><section class="card"><h2>刺激後の初回到達</h2><table><thead><tr><th>領域</th><th>step</th><th>遅延</th></tr></thead><tbody>${arrivalRows}</tbody></table></section><section class="card"><h2>信号経路</h2><table><thead><tr><th>経路</th><th>通過</th><th>興奮</th><th>抑制</th><th>|信号|</th></tr></thead><tbody>${routeRows || '<tr><td colspan="5">信号記録なし</td></tr>'}</tbody></table></section><section class="card warn"><strong>注意</strong><p>本レポートはv021概念モデル内部の仮想計算結果です。相関は直接接続や因果関係を示さず、人間の脳活動、診断、治療効果を示すものではありません。</p></section></main></body></html>`;
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
@@ -5036,6 +5047,14 @@
 
   window.VBL_APP = {
     version: MODEL_VERSION,
+    getStateRef() { return state; },
+    getRegions() { return REGIONS; },
+    getElements() { return els; },
+    selectRegion(regionId) { if (!REGION_BY_ID.has(regionId)) return false; state.selection = { type: 'region', id: regionId }; updateSelection(); renderAtlasHierarchy(); return true; },
+    selectNode(nodeId) { const id = Number(nodeId); if (!state.nodes[id]) return false; state.selection = { type: 'node', id }; updateSelection(); return true; },
+    setEngineMode(mode) { const value = mode === 'remote' ? 'remote' : 'local'; if (els.engineMode) els.engineMode.value = value; changeEngineMode(value); },
+    setEngineAdapter(id) { state.engine.adapterId = String(id || 'native'); if (els.engineAdapter && [...els.engineAdapter.options].some(option => option.value === state.engine.adapterId)) els.engineAdapter.value = state.engine.adapterId; changeEngineAdapter(state.engine.adapterId); },
+    addEvent(message, important=false) { addEvent(message, important); },
     getSimulationPayload(steps = 40) {
       const payload = remoteSimulationPayload(Math.max(1, Math.min(100, Number(steps) || 40)));
       payload.engine_id = 'native';

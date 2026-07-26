@@ -1,0 +1,578 @@
+{
+  "schema": "virtual-brain-reference-atlas-v1",
+  "name": "VBL-19 bilateral reference atlas",
+  "coordinateSpace": "MNI-like normalized",
+  "description": "19 model regions represented bilaterally as 38 parcels. Coordinates are approximate and are not a clinical atlas.",
+  "parcels": [
+    {
+      "id": "L_V1",
+      "modelRegionId": "V1",
+      "hemisphere": "left",
+      "name": "一次視覚野（左）",
+      "system": "感覚系",
+      "lobe": "後頭葉",
+      "level": "皮質",
+      "parent": "視覚系",
+      "centroid": [
+        -0.48,
+        0.08,
+        -0.78
+      ]
+    },
+    {
+      "id": "R_V1",
+      "modelRegionId": "V1",
+      "hemisphere": "right",
+      "name": "一次視覚野（右）",
+      "system": "感覚系",
+      "lobe": "後頭葉",
+      "level": "皮質",
+      "parent": "視覚系",
+      "centroid": [
+        0.48,
+        0.08,
+        -0.78
+      ]
+    },
+    {
+      "id": "L_V2",
+      "modelRegionId": "V2",
+      "hemisphere": "left",
+      "name": "視覚連合野（左）",
+      "system": "感覚系",
+      "lobe": "後頭葉",
+      "level": "皮質",
+      "parent": "視覚系",
+      "centroid": [
+        -0.5,
+        0.15,
+        -0.55
+      ]
+    },
+    {
+      "id": "R_V2",
+      "modelRegionId": "V2",
+      "hemisphere": "right",
+      "name": "視覚連合野（右）",
+      "system": "感覚系",
+      "lobe": "後頭葉",
+      "level": "皮質",
+      "parent": "視覚系",
+      "centroid": [
+        0.5,
+        0.15,
+        -0.55
+      ]
+    },
+    {
+      "id": "L_A1",
+      "modelRegionId": "A1",
+      "hemisphere": "left",
+      "name": "一次聴覚野（左）",
+      "system": "感覚系",
+      "lobe": "側頭葉",
+      "level": "皮質",
+      "parent": "聴覚系",
+      "centroid": [
+        -0.63,
+        -0.05,
+        -0.22
+      ]
+    },
+    {
+      "id": "R_A1",
+      "modelRegionId": "A1",
+      "hemisphere": "right",
+      "name": "一次聴覚野（右）",
+      "system": "感覚系",
+      "lobe": "側頭葉",
+      "level": "皮質",
+      "parent": "聴覚系",
+      "centroid": [
+        0.63,
+        -0.05,
+        -0.22
+      ]
+    },
+    {
+      "id": "L_A2",
+      "modelRegionId": "A2",
+      "hemisphere": "left",
+      "name": "聴覚連合野（左）",
+      "system": "感覚系",
+      "lobe": "側頭葉",
+      "level": "皮質",
+      "parent": "聴覚系",
+      "centroid": [
+        -0.58,
+        0.03,
+        -0.03
+      ]
+    },
+    {
+      "id": "R_A2",
+      "modelRegionId": "A2",
+      "hemisphere": "right",
+      "name": "聴覚連合野（右）",
+      "system": "感覚系",
+      "lobe": "側頭葉",
+      "level": "皮質",
+      "parent": "聴覚系",
+      "centroid": [
+        0.58,
+        0.03,
+        -0.03
+      ]
+    },
+    {
+      "id": "L_S1",
+      "modelRegionId": "S1",
+      "hemisphere": "left",
+      "name": "一次体性感覚野（左）",
+      "system": "感覚系",
+      "lobe": "頭頂葉",
+      "level": "皮質",
+      "parent": "体性感覚系",
+      "centroid": [
+        -0.47,
+        0.38,
+        0.02
+      ]
+    },
+    {
+      "id": "R_S1",
+      "modelRegionId": "S1",
+      "hemisphere": "right",
+      "name": "一次体性感覚野（右）",
+      "system": "感覚系",
+      "lobe": "頭頂葉",
+      "level": "皮質",
+      "parent": "体性感覚系",
+      "centroid": [
+        0.47,
+        0.38,
+        0.02
+      ]
+    },
+    {
+      "id": "L_PPC",
+      "modelRegionId": "PPC",
+      "hemisphere": "left",
+      "name": "後部頭頂連合野（左）",
+      "system": "連合系",
+      "lobe": "頭頂葉",
+      "level": "皮質",
+      "parent": "感覚統合系",
+      "centroid": [
+        -0.46,
+        0.3,
+        -0.25
+      ]
+    },
+    {
+      "id": "R_PPC",
+      "modelRegionId": "PPC",
+      "hemisphere": "right",
+      "name": "後部頭頂連合野（右）",
+      "system": "連合系",
+      "lobe": "頭頂葉",
+      "level": "皮質",
+      "parent": "感覚統合系",
+      "centroid": [
+        0.46,
+        0.3,
+        -0.25
+      ]
+    },
+    {
+      "id": "L_THA",
+      "modelRegionId": "THA",
+      "hemisphere": "left",
+      "name": "視床（左）",
+      "system": "中継系",
+      "lobe": "間脳",
+      "level": "皮質下",
+      "parent": "視床系",
+      "centroid": [
+        -0.17,
+        -0.02,
+        0.0
+      ]
+    },
+    {
+      "id": "R_THA",
+      "modelRegionId": "THA",
+      "hemisphere": "right",
+      "name": "視床（右）",
+      "system": "中継系",
+      "lobe": "間脳",
+      "level": "皮質下",
+      "parent": "視床系",
+      "centroid": [
+        0.17,
+        -0.02,
+        0.0
+      ]
+    },
+    {
+      "id": "L_INS",
+      "modelRegionId": "INS",
+      "hemisphere": "left",
+      "name": "島皮質（左）",
+      "system": "内受容系",
+      "lobe": "島葉",
+      "level": "皮質",
+      "parent": "内受容・顕著性系",
+      "centroid": [
+        -0.27,
+        0.02,
+        0.1
+      ]
+    },
+    {
+      "id": "R_INS",
+      "modelRegionId": "INS",
+      "hemisphere": "right",
+      "name": "島皮質（右）",
+      "system": "内受容系",
+      "lobe": "島葉",
+      "level": "皮質",
+      "parent": "内受容・顕著性系",
+      "centroid": [
+        0.27,
+        0.02,
+        0.1
+      ]
+    },
+    {
+      "id": "L_HIP",
+      "modelRegionId": "HIP",
+      "hemisphere": "left",
+      "name": "海馬（左）",
+      "system": "記憶系",
+      "lobe": "内側側頭葉",
+      "level": "皮質下",
+      "parent": "内側側頭葉記憶系",
+      "centroid": [
+        -0.3,
+        -0.28,
+        -0.08
+      ]
+    },
+    {
+      "id": "R_HIP",
+      "modelRegionId": "HIP",
+      "hemisphere": "right",
+      "name": "海馬（右）",
+      "system": "記憶系",
+      "lobe": "内側側頭葉",
+      "level": "皮質下",
+      "parent": "内側側頭葉記憶系",
+      "centroid": [
+        0.3,
+        -0.28,
+        -0.08
+      ]
+    },
+    {
+      "id": "L_AMY",
+      "modelRegionId": "AMY",
+      "hemisphere": "left",
+      "name": "扁桃体（左）",
+      "system": "情動系",
+      "lobe": "内側側頭葉",
+      "level": "皮質下",
+      "parent": "辺縁系",
+      "centroid": [
+        -0.3,
+        -0.28,
+        0.22
+      ]
+    },
+    {
+      "id": "R_AMY",
+      "modelRegionId": "AMY",
+      "hemisphere": "right",
+      "name": "扁桃体（右）",
+      "system": "情動系",
+      "lobe": "内側側頭葉",
+      "level": "皮質下",
+      "parent": "辺縁系",
+      "centroid": [
+        0.3,
+        -0.28,
+        0.22
+      ]
+    },
+    {
+      "id": "L_ACC",
+      "modelRegionId": "ACC",
+      "hemisphere": "left",
+      "name": "前部帯状皮質（左）",
+      "system": "顕著性系",
+      "lobe": "辺縁葉",
+      "level": "皮質",
+      "parent": "顕著性・制御系",
+      "centroid": [
+        -0.16,
+        0.22,
+        0.23
+      ]
+    },
+    {
+      "id": "R_ACC",
+      "modelRegionId": "ACC",
+      "hemisphere": "right",
+      "name": "前部帯状皮質（右）",
+      "system": "顕著性系",
+      "lobe": "辺縁葉",
+      "level": "皮質",
+      "parent": "顕著性・制御系",
+      "centroid": [
+        0.16,
+        0.22,
+        0.23
+      ]
+    },
+    {
+      "id": "L_PFC",
+      "modelRegionId": "PFC",
+      "hemisphere": "left",
+      "name": "背外側前頭前野（左）",
+      "system": "実行制御系",
+      "lobe": "前頭葉",
+      "level": "皮質",
+      "parent": "前頭前野系",
+      "centroid": [
+        -0.49,
+        0.23,
+        0.7
+      ]
+    },
+    {
+      "id": "R_PFC",
+      "modelRegionId": "PFC",
+      "hemisphere": "right",
+      "name": "背外側前頭前野（右）",
+      "system": "実行制御系",
+      "lobe": "前頭葉",
+      "level": "皮質",
+      "parent": "前頭前野系",
+      "centroid": [
+        0.49,
+        0.23,
+        0.7
+      ]
+    },
+    {
+      "id": "L_OFC",
+      "modelRegionId": "OFC",
+      "hemisphere": "left",
+      "name": "眼窩前頭皮質（左）",
+      "system": "価値判断系",
+      "lobe": "前頭葉",
+      "level": "皮質",
+      "parent": "前頭前野系",
+      "centroid": [
+        -0.4,
+        -0.1,
+        0.7
+      ]
+    },
+    {
+      "id": "R_OFC",
+      "modelRegionId": "OFC",
+      "hemisphere": "right",
+      "name": "眼窩前頭皮質（右）",
+      "system": "価値判断系",
+      "lobe": "前頭葉",
+      "level": "皮質",
+      "parent": "前頭前野系",
+      "centroid": [
+        0.4,
+        -0.1,
+        0.7
+      ]
+    },
+    {
+      "id": "L_BG",
+      "modelRegionId": "BG",
+      "hemisphere": "left",
+      "name": "大脳基底核（左）",
+      "system": "行動選択系",
+      "lobe": "皮質下核",
+      "level": "皮質下",
+      "parent": "大脳基底核回路",
+      "centroid": [
+        -0.2,
+        -0.05,
+        0.18
+      ]
+    },
+    {
+      "id": "R_BG",
+      "modelRegionId": "BG",
+      "hemisphere": "right",
+      "name": "大脳基底核（右）",
+      "system": "行動選択系",
+      "lobe": "皮質下核",
+      "level": "皮質下",
+      "parent": "大脳基底核回路",
+      "centroid": [
+        0.2,
+        -0.05,
+        0.18
+      ]
+    },
+    {
+      "id": "L_PMC",
+      "modelRegionId": "PMC",
+      "hemisphere": "left",
+      "name": "前運動野（左）",
+      "system": "運動系",
+      "lobe": "前頭葉",
+      "level": "皮質",
+      "parent": "運動計画系",
+      "centroid": [
+        -0.44,
+        0.35,
+        0.38
+      ]
+    },
+    {
+      "id": "R_PMC",
+      "modelRegionId": "PMC",
+      "hemisphere": "right",
+      "name": "前運動野（右）",
+      "system": "運動系",
+      "lobe": "前頭葉",
+      "level": "皮質",
+      "parent": "運動計画系",
+      "centroid": [
+        0.44,
+        0.35,
+        0.38
+      ]
+    },
+    {
+      "id": "L_M1",
+      "modelRegionId": "M1",
+      "hemisphere": "left",
+      "name": "一次運動野（左）",
+      "system": "運動系",
+      "lobe": "前頭葉",
+      "level": "皮質",
+      "parent": "運動出力系",
+      "centroid": [
+        -0.42,
+        0.35,
+        0.19
+      ]
+    },
+    {
+      "id": "R_M1",
+      "modelRegionId": "M1",
+      "hemisphere": "right",
+      "name": "一次運動野（右）",
+      "system": "運動系",
+      "lobe": "前頭葉",
+      "level": "皮質",
+      "parent": "運動出力系",
+      "centroid": [
+        0.42,
+        0.35,
+        0.19
+      ]
+    },
+    {
+      "id": "L_CBL",
+      "modelRegionId": "CBL",
+      "hemisphere": "left",
+      "name": "小脳（左）",
+      "system": "運動調整系",
+      "lobe": "後頭蓋窩",
+      "level": "小脳",
+      "parent": "小脳系",
+      "centroid": [
+        -0.47,
+        -0.61,
+        -0.55
+      ]
+    },
+    {
+      "id": "R_CBL",
+      "modelRegionId": "CBL",
+      "hemisphere": "right",
+      "name": "小脳（右）",
+      "system": "運動調整系",
+      "lobe": "後頭蓋窩",
+      "level": "小脳",
+      "parent": "小脳系",
+      "centroid": [
+        0.47,
+        -0.61,
+        -0.55
+      ]
+    },
+    {
+      "id": "L_HYP",
+      "modelRegionId": "HYP",
+      "hemisphere": "left",
+      "name": "視床下部（左）",
+      "system": "恒常性系",
+      "lobe": "間脳",
+      "level": "皮質下",
+      "parent": "自律・内分泌系",
+      "centroid": [
+        -0.1,
+        -0.42,
+        0.02
+      ]
+    },
+    {
+      "id": "R_HYP",
+      "modelRegionId": "HYP",
+      "hemisphere": "right",
+      "name": "視床下部（右）",
+      "system": "恒常性系",
+      "lobe": "間脳",
+      "level": "皮質下",
+      "parent": "自律・内分泌系",
+      "centroid": [
+        0.1,
+        -0.42,
+        0.02
+      ]
+    },
+    {
+      "id": "L_BRS",
+      "modelRegionId": "BRS",
+      "hemisphere": "left",
+      "name": "脳幹（左）",
+      "system": "生命維持系",
+      "lobe": "脳幹",
+      "level": "脳幹",
+      "parent": "脳幹系",
+      "centroid": [
+        -0.06,
+        -0.64,
+        -0.04
+      ]
+    },
+    {
+      "id": "R_BRS",
+      "modelRegionId": "BRS",
+      "hemisphere": "right",
+      "name": "脳幹（右）",
+      "system": "生命維持系",
+      "lobe": "脳幹",
+      "level": "脳幹",
+      "parent": "脳幹系",
+      "centroid": [
+        0.06,
+        -0.64,
+        -0.04
+      ]
+    }
+  ]
+}

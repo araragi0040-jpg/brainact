@@ -133,14 +133,14 @@
     const pairs = data.pairs || [];
     const rows = results.map(item => {
       if (item.status !== 'ok') return `<tr><td>${escapeHtml(item.engineId)}</td><td colspan="6" class="engine-error">${escapeHtml(item.error || item.status)}</td></tr>`;
-      return `<tr><td><strong>${escapeHtml(item.engineId)}</strong></td><td>${item.totalSpikes}</td><td>${item.peakSpikes}</td><td>${Number(item.meanSpikesPerStep || 0).toFixed(2)}</td><td>${Number(item.meanWeightChange || 0).toFixed(5)}</td><td>${Number(item.elapsedMs || 0).toFixed(1)} ms</td><td>${item.steps}</td></tr>`;
+      return `<tr><td><strong>${escapeHtml(item.engineId)}</strong></td><td>${Number(item.totalOutput ?? item.totalSpikes ?? 0).toFixed(1)}<small>${escapeHtml(item.outputLabel||'')}</small></td><td>${Number(item.peakOutput ?? item.peakSpikes ?? 0).toFixed(1)}</td><td>${Number((item.meanOutputPerStep ?? item.meanSpikesPerStep) || 0).toFixed(2)}</td><td>${Number(item.meanWeightChange || 0).toFixed(5)}</td><td>${Number(item.elapsedMs || 0).toFixed(1)} ms</td><td>${item.steps}</td></tr>`;
     }).join('');
     const pairCards = pairs.length ? pairs.map(pair => `<article class="engine-pair-card">
-      <div><strong>${escapeHtml(pair.engineA)} ↔ ${escapeHtml(pair.engineB)}</strong><span>${Number(pair.compositeAgreement || 0).toFixed(1)}%</span></div>
-      <dl><dt>総発火差</dt><dd>${pair.totalSpikeDelta > 0 ? '+' : ''}${pair.totalSpikeDelta}</dd><dt>時系列一致</dt><dd>${Number(pair.temporalAgreement || 0).toFixed(1)}%</dd><dt>領域パターン</dt><dd>${Number(pair.regionPatternSimilarity || 0).toFixed(1)}%</dd><dt>速度比 B/A</dt><dd>${Number(pair.elapsedRatioBtoA || 0).toFixed(2)}</dd></dl>
+      <div><strong>${escapeHtml(pair.engineA)} ↔ ${escapeHtml(pair.engineB)}</strong><span>${pair.comparable ? `${Number(pair.compositeAgreement || 0).toFixed(1)}%` : '単位別'}</span></div>
+      <dl><dt>総出力差</dt><dd>${pair.totalSpikeDelta > 0 ? '+' : ''}${pair.totalSpikeDelta}</dd><dt>時系列一致</dt><dd>${Number(pair.temporalAgreement || 0).toFixed(1)}%</dd><dt>領域パターン</dt><dd>${Number(pair.regionPatternSimilarity || 0).toFixed(1)}%</dd><dt>速度比 B/A</dt><dd>${Number(pair.elapsedRatioBtoA || 0).toFixed(2)}</dd></dl>
     </article>`).join('') : '<p class="engine-lab-empty">比較可能な組み合わせがありません。</p>';
     target.innerHTML = `
-      <div class="engine-table-wrap"><table><thead><tr><th>エンジン</th><th>総発火</th><th>ピーク</th><th>平均/step</th><th>結合変化</th><th>計算時間</th><th>step</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="engine-table-wrap"><table><thead><tr><th>エンジン</th><th>総出力</th><th>ピーク</th><th>平均/step</th><th>結合変化</th><th>計算時間</th><th>step</th></tr></thead><tbody>${rows}</tbody></table></div>
       <div class="engine-pair-grid">${pairCards}</div>
       <p class="engine-lab-warning">${escapeHtml(data.warning || '')}</p>`;
   }

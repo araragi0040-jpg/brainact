@@ -203,8 +203,8 @@ def simulate_nest(request: Any) -> dict[str, Any]:
         frames.append({'step': current_step, 'simTime': sim_time, 'biologicalTimeMs': current_step * dt_ms, 'spikesThisStep': spikes, 'regionCounts': region_counts, 'regionExcitatoryCounts': region_exc, 'regionInhibitoryCounts': region_inh, 'hemisphereCounts': hemisphere_counts, 'routeSignals': {}, 'edgeActivity': {}, 'synapseChange': {}, 'meanWeightChange': 0.0})
 
     return {
-        'version': str(payload.get('version', 'v018')), 'engine': NEST_ENGINE_ID, 'engineId': 'nest',
-        'engineDetails': {'package': 'nest-simulator', 'packageVersion': package_version(), 'model': 'iaf_psc_alpha', 'dtMs': dt_ms, 'plasticity': 'fixed synapses in v018', 'statePersistence': 'V_m and conceptual counters'},
+        'version': str(payload.get('version', 'v021')), 'engine': NEST_ENGINE_ID, 'engineId': 'nest',
+        'engineDetails': {'package': 'nest-simulator', 'packageVersion': package_version(), 'model': 'iaf_psc_alpha', 'dtMs': dt_ms, 'plasticity': 'fixed synapses in v021', 'statePersistence': 'V_m and conceptual counters'},
         'elapsedMs': round((time.perf_counter() - started) * 1000.0, 3), 'rngState': int(payload.get('rng_state', 1)),
         'step': current_step, 'simTime': sim_time, 'totalSpikes': total_spikes, 'peakSpikes': peak_spikes,
         'nodes': nodes, 'edges': edges, 'stimulusSequence': stimulus, 'routeStats': payload.get('route_stats') or {},

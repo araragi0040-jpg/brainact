@@ -45,9 +45,8 @@ def _connectivity(nodes: list[dict[str, Any]], edges: list[dict[str, Any]], regi
         source = str(edge.get('sourceRegionId', '')); target = str(edge.get('targetRegionId', ''))
         if source not in index or target not in index: continue
         i, j = index[source], index[target]
-        # TVB structural weights are non-negative. Inhibitory point-neuron
-        # links reduce the aggregate rather than becoming negative tracts.
-        value = float(edge.get('weight', 0.0))
+        # TVB structural weights are non-negative. Point-neuron signs describe local influence; structural tract magnitude is aggregated by absolute weight.
+        value = abs(float(edge.get('weight', 0.0)))
         weights[i, j] += value
         counts[i, j] += 1.0
         delays[i, j] += max(0.1, float(edge.get('delay', 1.0)))
@@ -138,4 +137,4 @@ def simulate_tvb(request: Any) -> dict[str, Any]:
     for node in nodes:
         idx=regions.index(str(node.get('regionId'))) if str(node.get('regionId')) in regions else 0
         node['voltage']=float(final[idx]); node['pulse']=float(final[idx]); node['fired']=bool(final[idx]>.72)
-    return {'version':str(payload.get('version','v018')),'engine':TVB_ENGINE_ID,'engineId':'tvb','engineDetails':{'package':'tvb-library','packageVersion':package_version(),'model':'Generic2dOscillator','scale':'region-level','outputMeaning':'activity-equivalent, not literal spikes','dtMs':dt_ms},'elapsedMs':round((time.perf_counter()-started)*1000,3),'rngState':int(payload.get('rng_state',1)),'step':current_step,'simTime':sim_time,'totalSpikes':total,'peakSpikes':peak,'nodes':nodes,'edges':edges,'stimulusSequence':stimulus,'routeStats':payload.get('route_stats') or {},'engineState':{'biologicalTimeMs':current_step*dt_ms},'frames':frames}
+    return {'version':str(payload.get('version','v021')),'engine':TVB_ENGINE_ID,'engineId':'tvb','engineDetails':{'package':'tvb-library','packageVersion':package_version(),'model':'Generic2dOscillator','scale':'region-level','outputMeaning':'activity-equivalent, not literal spikes','dtMs':dt_ms},'elapsedMs':round((time.perf_counter()-started)*1000,3),'rngState':int(payload.get('rng_state',1)),'step':current_step,'simTime':sim_time,'totalSpikes':total,'peakSpikes':peak,'nodes':nodes,'edges':edges,'stimulusSequence':stimulus,'routeStats':payload.get('route_stats') or {},'engineState':{'biologicalTimeMs':current_step*dt_ms},'frames':frames}

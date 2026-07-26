@@ -4,16 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="color-scheme" content="dark" />
-  <title>仮想神経回路 v018</title>
-  <link rel="stylesheet" href="./styles.css?v=018" />
-  <link rel="stylesheet" href="./engine-lab.css?v=018" />
+  <title>仮想神経回路 v021</title>
+  <link rel="stylesheet" href="./styles.css?v=021" />
+  <link rel="stylesheet" href="./engine-lab.css?v=021" />
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <div>
         <p class="eyebrow">VIRTUAL BRAIN LAB / CONCEPT MODEL</p>
-        <h1>仮想神経回路 <span>v018</span></h1>
+        <h1>仮想神経回路 <span>v021</span></h1>
       </div>
       <div class="status-row" aria-live="polite">
         <span class="status-dot" id="runStatusDot"></span>
@@ -440,7 +440,7 @@
         <section class="engine-section">
           <div class="section-title-row">
             <h2>計算エンジン</h2>
-            <span class="mini-badge warn">v018</span>
+            <span class="mini-badge warn">v021</span>
           </div>
           <p class="section-copy">ニューロン単位のNative・Brian2・NESTと、領域単位のRegional Mass Lite・The Virtual Brainを同じ画面から実行・比較できます。</p>
           <label class="field">
@@ -508,7 +508,7 @@
         <section>
           <div class="section-title-row">
             <h2>外部データ接続</h2>
-            <span class="mini-badge">v018</span>
+            <span class="mini-badge">v021</span>
           </div>
           <p class="section-copy">領域情報・3D座標・接続データをローカルのJSON／CSVから読み込み、内蔵モデルと切り替えます。</p>
           <label class="field">
@@ -559,13 +559,13 @@
           </div>
           <input id="externalDataInput" type="file" accept="application/json,text/csv,.json,.csv" hidden />
           <div id="externalDataStatus" class="dataset-status empty-state">内蔵19領域モデルを使用しています。</div>
-          <p class="hint">v018では、既存19領域のIDに一致するデータを安全に統合し、Python計算時にも同じ領域・接続情報を送信します。未知の領域IDは無視し、結果を読み込み履歴に表示します。</p>
+          <p class="hint">v021では、既存19領域のIDに一致するデータを安全に統合し、Python計算時にも同じ領域・接続情報を送信します。未知の領域IDは無視し、結果を読み込み履歴に表示します。</p>
         </section>
 
         <section>
           <div class="section-title-row">
             <h2>関連・経路解析</h2>
-            <span class="mini-badge">v018</span>
+            <span class="mini-badge">v021</span>
           </div>
           <p class="section-copy">選択領域を起点に、入力元・出力先と到達経路を段階表示します。</p>
           <div class="two-fields">
@@ -795,13 +795,16 @@
       </section>
 
       <section class="analysis-disclaimer">
-        本画面の相関、到達時間、経路通過数、結合変化はv018概念モデル内部の計算結果です。人間の脳活動における因果関係、診断、治療効果を示すものではありません。
+        本画面の相関、到達時間、経路通過数、結合変化はv021概念モデル内部の計算結果です。人間の脳活動における因果関係、診断、治療効果を示すものではありません。
       </section>
     </div>
   </div>
 
-  <script src="./config.js?v=018"></script>
-  <script src="./app.js?v=018"></script>
-  <script src="./engine-lab.js?v=018"></script>
+  <script src="./config.js?v=021"></script>
+  <script src="./app.js?v=021"></script>
+  <script src="./engine-lab.js?v=021"></script>
+  <script src="./multiscale.js?v=021"></script>
+  <script src="./hierarchy.js?v=021"></script>
+  <script src="./atlas-mesh.js?v=021"></script>
 </body>
 </html>

@@ -14,9 +14,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from backend.brian2_engine import package_available as brian2_available, package_version as brian2_version, self_test as brian2_self_test, simulate_brian2
 from backend.nest_engine import package_available as nest_available, package_version as nest_version, self_test as nest_self_test, simulate_nest
-from backend.nest_engine import package_available as nest_available, package_version as nest_version, self_test as nest_self_test, simulate_nest
 from backend.tvb_engine import package_available as tvb_available, package_version as tvb_version, self_test as tvb_self_test, simulate_tvb
 from backend.regional_mass_engine import self_test as regional_mass_self_test, simulate_regional_mass
+from backend.multiscale_engine import self_test as multiscale_self_test, simulate_multiscale
 from backend.engine_compare import build_comparison, summarize_result
 from backend.engine_adapters import (
     compatibility_report,
@@ -25,7 +25,7 @@ from backend.engine_adapters import (
     list_adapters,
 )
 
-APP_VERSION = "v018"
+APP_VERSION = "v021"
 ENGINE_VERSION = "engine-adapter-v2"
 DT_DEFAULT = 0.01
 UINT32_MAX_PLUS_ONE = 4294967296.0
@@ -33,7 +33,7 @@ UINT32_MAX_PLUS_ONE = 4294967296.0
 app = FastAPI(
     title="Virtual Brain Lab Python Engine",
     version=APP_VERSION,
-    description="仮想神経回路v018用の統合計算エンジン。Native、Brian2、NEST、TVB、内蔵領域質量モデルに対応します。",
+    description="仮想神経回路v021用の統合計算エンジン。Native、マルチスケール、Brian2、NEST、TVB、内蔵領域質量モデルに対応します。",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
@@ -77,8 +77,8 @@ class SimulationRequest(BaseModel):
     rng_state: int = 1
     step: int = 0
     sim_time: float = 0.0
-    total_spikes: int = 0
-    peak_spikes: int = 0
+    total_spikes: float = 0.0
+    peak_spikes: float = 0.0
     nodes: list[dict[str, Any]]
     edges: list[dict[str, Any]]
     regions: list[str]
@@ -219,8 +219,8 @@ def simulate_native(request: SimulationRequest) -> dict[str, Any]:
     rng_state = request.rng_state & 0xFFFFFFFF
     current_step = int(request.step)
     sim_time = float(request.sim_time)
-    total_spikes = int(request.total_spikes)
-    peak_spikes = int(request.peak_spikes)
+    total_spikes = float(request.total_spikes)
+    peak_spikes = float(request.peak_spikes)
     frames: list[dict[str, Any]] = []
 
     outgoing: dict[int, list[dict[str, Any]]] = {int(node.get("id", index)): [] for index, node in enumerate(nodes)}
@@ -449,7 +449,7 @@ def simulate(request: SimulationRequest) -> dict[str, Any]:
         if adapter.execution_implemented and adapter.package and not adapter.package_detected:
             requirement = {"brian2": "requirements-brian2.txt", "nest": "requirements-nest.txt", "tvb": "requirements-tvb.txt"}.get(adapter.id, "対応パッケージ")
             raise HTTPException(status_code=409, detail=f"{adapter.name}の直接計算コードは実装済みですが、現在のAPI環境にパッケージがありません。{requirement}を導入してください。")
-        raise HTTPException(status_code=409, detail=f"{adapter.name}はv018では互換性診断・変換設定書き出しまで対応しています。")
+        raise HTTPException(status_code=409, detail=f"{adapter.name}はv021では互換性診断・変換設定書き出しまで対応しています。")
     if adapter.id == "brian2":
         try:
             return simulate_brian2(request)
@@ -467,6 +467,11 @@ def simulate(request: SimulationRequest) -> dict[str, Any]:
             return simulate_tvb(request)
         except Exception as exc:
             raise HTTPException(status_code=422, detail=f"TVB計算に失敗しました: {exc}") from exc
+    if adapter.id == "multiscale":
+        try:
+            return simulate_multiscale(request)
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail=f"マルチスケール計算に失敗しました: {exc}") from exc
     if adapter.id == "regional-mass":
         try:
             return simulate_regional_mass(request)
@@ -508,6 +513,8 @@ def engine_self_test(engine_id: str) -> dict[str, Any]:
             return tvb_self_test()
         except Exception as exc:
             raise HTTPException(status_code=422, detail=f"TVBセルフテストに失敗しました: {exc}") from exc
+    if engine_id == "multiscale":
+        return multiscale_self_test()
     if engine_id == "regional-mass":
         return regional_mass_self_test()
     raise HTTPException(status_code=409, detail=f"{adapter.name}の直接計算セルフテストは未実装です。")
@@ -584,7 +591,7 @@ def engines() -> dict[str, Any]:
         "version": APP_VERSION,
         "defaultEngine": "native",
         "engines": list_adapters(),
-        "note": "v018ではNativeとRegional Mass Liteを標準実行でき、Brian2・NEST・TVBは各パッケージ導入環境で直接計算できます。",
+        "note": "v021ではNativeとRegional Mass Liteを標準実行でき、Brian2・NEST・TVBは各パッケージ導入環境で直接計算できます。",
     }
 
 
