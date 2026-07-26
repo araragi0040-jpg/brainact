@@ -14,7 +14,7 @@
   const isHosted = !isFile && !isLocalHost;
 
   window.VIRTUAL_BRAIN_CONFIG = Object.freeze({
-    appVersion: 'v013',
+    appVersion: 'v013.1',
     environment: isFile ? 'file' : isLocalHost ? 'local' : 'hosted',
     environmentLabel: isFile ? 'ローカルファイル' : isLocalHost ? 'ローカル開発' : '公開環境',
     defaultEngineMode: isFile ? 'local' : 'remote',

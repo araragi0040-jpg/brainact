@@ -58,3 +58,6 @@ chmod +x start_all.sh backend/start_server.sh start_frontend.sh
 ## データ保存
 
 実験、シナリオ、外部データ設定はブラウザの`localStorage`へ保存されます。Vercelサーバーへ自動保存されるものではありません。
+## v013.1 公開版修正
+
+公開画面で全ボタンが反応しない問題を修正しました。原因と反映方法は `BUTTON_FIX.md` を参照してください。

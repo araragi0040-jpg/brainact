@@ -4,15 +4,15 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="color-scheme" content="dark" />
-  <title>仮想神経回路 v012</title>
-  <link rel="stylesheet" href="./styles.css" />
+  <title>仮想神経回路 v013</title>
+  <link rel="stylesheet" href="./styles.css?v=013.1" />
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <div>
         <p class="eyebrow">VIRTUAL BRAIN LAB / CONCEPT MODEL</p>
-        <h1>仮想神経回路 <span>v012</span></h1>
+        <h1>仮想神経回路 <span>v013</span></h1>
       </div>
       <div class="status-row" aria-live="polite">
         <span class="status-dot" id="runStatusDot"></span>
@@ -439,7 +439,7 @@
         <section class="engine-section">
           <div class="section-title-row">
             <h2>計算エンジン</h2>
-            <span class="mini-badge warn">v012</span>
+            <span class="mini-badge warn">v013</span>
           </div>
           <p class="section-copy">表示・操作はブラウザ、発火計算はブラウザ内またはPython APIで実行します。</p>
           <label class="field">
@@ -453,6 +453,16 @@
             <span>API URL</span>
             <input id="apiUrl" type="url" value="http://127.0.0.1:8765" spellcheck="false" />
           </label>
+          <div class="two-fields">
+            <label class="field">
+              <span>実行環境</span>
+              <input id="deploymentEnvironment" type="text" value="確認中" readonly />
+            </label>
+            <label class="field">
+              <span>推定送信量</span>
+              <input id="payloadEstimate" type="text" value="計算中" readonly />
+            </label>
+          </div>
           <div class="two-fields">
             <label class="field">
               <span>1回の計算量</span>
@@ -473,17 +483,20 @@
             <input id="engineFallbackToggle" type="checkbox" checked />
           </label>
           <div class="button-grid">
-            <button class="primary" id="testApiBtn">API接続テスト</button>
-            <button id="validateApiBtn">現在モデルを検証</button>
+            <button class="primary" id="testApiBtn" type="button">API接続テスト</button>
+            <button id="validateApiBtn" type="button">現在モデルを検証</button>
+            <button id="deploymentCheckBtn" type="button">公開環境診断</button>
+            <button id="copyApiUrlBtn" type="button">API URLをコピー</button>
           </div>
           <div id="engineStatus" class="engine-status empty-state">ブラウザ内計算を使用しています。</div>
+          <div id="deploymentStatus" class="deployment-status">公開環境を確認しています。</div>
           <p class="hint">Python利用時は、先に <code>backend/start_server.bat</code> または <code>start_server.sh</code> を実行してください。テンプレート実行中は段階切替を正確にするため1stepずつ送信します。</p>
         </section>
 
         <section>
           <div class="section-title-row">
             <h2>外部データ接続</h2>
-            <span class="mini-badge">v012</span>
+            <span class="mini-badge">v013</span>
           </div>
           <p class="section-copy">領域情報・3D座標・接続データをローカルのJSON／CSVから読み込み、内蔵モデルと切り替えます。</p>
           <label class="field">
@@ -534,13 +547,13 @@
           </div>
           <input id="externalDataInput" type="file" accept="application/json,text/csv,.json,.csv" hidden />
           <div id="externalDataStatus" class="dataset-status empty-state">内蔵19領域モデルを使用しています。</div>
-          <p class="hint">v012では、既存19領域のIDに一致するデータを安全に統合し、Python計算時にも同じ領域・接続情報を送信します。未知の領域IDは無視し、結果を読み込み履歴に表示します。</p>
+          <p class="hint">v013では、既存19領域のIDに一致するデータを安全に統合し、Python計算時にも同じ領域・接続情報を送信します。未知の領域IDは無視し、結果を読み込み履歴に表示します。</p>
         </section>
 
         <section>
           <div class="section-title-row">
             <h2>関連・経路解析</h2>
-            <span class="mini-badge">v012</span>
+            <span class="mini-badge">v013</span>
           </div>
           <p class="section-copy">選択領域を起点に、入力元・出力先と到達経路を段階表示します。</p>
           <div class="two-fields">
@@ -770,11 +783,12 @@
       </section>
 
       <section class="analysis-disclaimer">
-        本画面の相関、到達時間、経路通過数、結合変化はv012概念モデル内部の計算結果です。人間の脳活動における因果関係、診断、治療効果を示すものではありません。
+        本画面の相関、到達時間、経路通過数、結合変化はv013概念モデル内部の計算結果です。人間の脳活動における因果関係、診断、治療効果を示すものではありません。
       </section>
     </div>
   </div>
 
-  <script src="./app.js"></script>
+  <script src="./config.js?v=013.1"></script>
+  <script src="./app.js?v=013.1"></script>
 </body>
 </html>
