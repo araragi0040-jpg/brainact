@@ -1,5 +1,5 @@
 /**
- * 仮想神経回路 v013 公開環境設定
+ * 仮想神経回路 v015 公開環境設定
  *
  * GitHub / Vercelへそのまま配置できるよう、実行場所からAPI接続先を自動判定します。
  * 秘密情報やAPIキーはこのファイルへ記載しないでください。
@@ -14,7 +14,7 @@
   const isHosted = !isFile && !isLocalHost;
 
   window.VIRTUAL_BRAIN_CONFIG = Object.freeze({
-    appVersion: 'v013.1',
+    appVersion: 'v015',
     environment: isFile ? 'file' : isLocalHost ? 'local' : 'hosted',
     environmentLabel: isFile ? 'ローカルファイル' : isLocalHost ? 'ローカル開発' : '公開環境',
     defaultEngineMode: isFile ? 'local' : 'remote',

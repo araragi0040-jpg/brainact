@@ -11,15 +11,23 @@ from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
-APP_VERSION = "v013"
-ENGINE_VERSION = "python-engine-v2-serverless"
+from backend.brian2_engine import package_available as brian2_available, package_version as brian2_version, self_test as brian2_self_test, simulate_brian2
+from backend.engine_adapters import (
+    compatibility_report,
+    export_manifest,
+    get_adapter,
+    list_adapters,
+)
+
+APP_VERSION = "v015"
+ENGINE_VERSION = "engine-adapter-v2"
 DT_DEFAULT = 0.01
 UINT32_MAX_PLUS_ONE = 4294967296.0
 
 app = FastAPI(
     title="Virtual Brain Lab Python Engine",
     version=APP_VERSION,
-    description="仮想神経回路v013用の公開対応計算エンジン。概念モデルであり、医療・診断用途ではありません。",
+    description="仮想神経回路v015用の公開対応計算エンジン。Native計算と任意導入のBrian2直接計算に対応します。",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
@@ -57,6 +65,7 @@ class SimulationRequest(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     version: str = APP_VERSION
+    engine_id: str = "native"
     steps: int = Field(default=1, ge=1, le=100)
     dt: float = Field(default=DT_DEFAULT, gt=0, le=1)
     rng_state: int = 1
@@ -71,6 +80,7 @@ class SimulationRequest(BaseModel):
     stimulus_sequence: dict[str, Any] | None = None
     interventions: list[dict[str, Any]] = Field(default_factory=list)
     route_stats: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    engine_state: dict[str, Any] = Field(default_factory=dict)
 
 
 class ValidateRequest(BaseModel):
@@ -79,6 +89,15 @@ class ValidateRequest(BaseModel):
     nodes: list[dict[str, Any]] = Field(default_factory=list)
     edges: list[dict[str, Any]] = Field(default_factory=list)
     regions: list[str] = Field(default_factory=list)
+
+
+class AdapterInspectRequest(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    nodes: list[dict[str, Any]] = Field(default_factory=list)
+    edges: list[dict[str, Any]] = Field(default_factory=list)
+    regions: list[str] = Field(default_factory=list)
+    config: dict[str, Any] = Field(default_factory=dict)
 
 
 def clamp(value: float, minimum: float, maximum: float) -> float:
@@ -152,7 +171,12 @@ def normalize_interventions(items: list[dict[str, Any]]) -> dict[str, dict[str, 
     return result
 
 
-def simulate(request: SimulationRequest) -> dict[str, Any]:
+def simulate_native(request: SimulationRequest) -> dict[str, Any]:
+    adapter = get_adapter(request.engine_id)
+    if adapter.id != request.engine_id:
+        raise HTTPException(status_code=404, detail=f"未知の計算エンジンです: {request.engine_id}")
+    if adapter.id != "native":
+        raise HTTPException(status_code=409, detail="Native計算関数へ外部エンジンが渡されました。")
     started = time.perf_counter()
     nodes = [dict(node) for node in request.nodes]
     edges = [dict(edge) for edge in request.edges]
@@ -389,6 +413,7 @@ def simulate(request: SimulationRequest) -> dict[str, Any]:
     return {
         "version": APP_VERSION,
         "engine": ENGINE_VERSION,
+        "engineId": adapter.id,
         "elapsedMs": round(elapsed_ms, 3),
         "rngState": rng_state,
         "step": current_step,
@@ -401,6 +426,52 @@ def simulate(request: SimulationRequest) -> dict[str, Any]:
         "routeStats": route_stats,
         "frames": frames,
     }
+
+
+def simulate(request: SimulationRequest) -> dict[str, Any]:
+    adapter = get_adapter(request.engine_id)
+    if adapter.id != request.engine_id:
+        raise HTTPException(status_code=404, detail=f"未知の計算エンジンです: {request.engine_id}")
+    if not adapter.executable:
+        if adapter.id == "brian2" and not adapter.package_detected:
+            raise HTTPException(
+                status_code=409,
+                detail="Brian2が未導入です。ローカル環境で requirements-brian2.txt をインストールしてください。",
+            )
+        raise HTTPException(
+            status_code=409,
+            detail=f"{adapter.name}はv015では互換性診断・変換設定書き出しまで対応しています。",
+        )
+    if adapter.id == "brian2":
+        try:
+            return simulate_brian2(request)
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail=f"Brian2計算に失敗しました: {exc}") from exc
+    return simulate_native(request)
+
+
+@app.post("/api/v1/engines/{engine_id}/self-test")
+def engine_self_test(engine_id: str) -> dict[str, Any]:
+    adapter = get_adapter(engine_id)
+    if adapter.id != engine_id:
+        raise HTTPException(status_code=404, detail=f"未知の計算エンジンです: {engine_id}")
+    if engine_id == "native":
+        return {
+            "status": "ok",
+            "engineId": "native",
+            "engineVersion": ENGINE_VERSION,
+            "message": "Native計算エンジンは利用可能です。",
+        }
+    if engine_id == "brian2":
+        if not brian2_available():
+            raise HTTPException(status_code=409, detail="Brian2が未導入です。requirements-brian2.txtをインストールしてください。")
+        try:
+            return brian2_self_test()
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail=f"Brian2セルフテストに失敗しました: {exc}") from exc
+    raise HTTPException(status_code=409, detail=f"{adapter.name}の直接計算セルフテストは未実装です。")
 
 
 @app.get("/", include_in_schema=False)
@@ -417,6 +488,7 @@ def api_root() -> dict[str, Any]:
         "health": "/api/health",
         "docs": "/api/docs",
         "medicalUse": False,
+        "adapters": "/api/v1/engines",
         "deployment": {
             "runtime": "vercel-python" if os.getenv("VERCEL") else "local-python",
             "region": os.getenv("VERCEL_REGION", "local"),
@@ -439,6 +511,8 @@ def diagnostics() -> dict[str, Any]:
         "maxStepsPerRequest": 100,
         "persistentServerState": False,
         "medicalUse": False,
+        "adapters": list_adapters(),
+        "brian2": {"available": brian2_available(), "version": brian2_version()},
     }
 
 
@@ -450,12 +524,38 @@ def health() -> dict[str, Any]:
         "engine": ENGINE_VERSION,
         "model": "conceptual-spiking-network",
         "medicalUse": False,
+        "adapters": list_adapters(),
+        "brian2": {"available": brian2_available(), "version": brian2_version()},
         "deployment": {
             "runtime": "vercel-python" if os.getenv("VERCEL") else "local-python",
             "region": os.getenv("VERCEL_REGION", "local"),
             "persistentServerState": False,
         },
     }
+
+
+@app.get("/api/v1/engines")
+def engines() -> dict[str, Any]:
+    return {
+        "version": APP_VERSION,
+        "defaultEngine": "native",
+        "engines": list_adapters(),
+        "note": "v015ではBrian2を任意導入すると直接計算できます。NESTとTVBは診断・書き出し段階です。",
+    }
+
+
+@app.post("/api/v1/engines/{engine_id}/compatibility")
+def inspect_engine(engine_id: str, request: AdapterInspectRequest) -> dict[str, Any]:
+    if engine_id not in {item["id"] for item in list_adapters()}:
+        raise HTTPException(status_code=404, detail=f"未知の計算エンジンです: {engine_id}")
+    return compatibility_report(engine_id, request.nodes, request.edges, request.regions, request.config)
+
+
+@app.post("/api/v1/engines/{engine_id}/export")
+def export_engine_manifest(engine_id: str, request: AdapterInspectRequest) -> dict[str, Any]:
+    if engine_id not in {item["id"] for item in list_adapters()}:
+        raise HTTPException(status_code=404, detail=f"未知の計算エンジンです: {engine_id}")
+    return export_manifest(engine_id, request.nodes, request.edges, request.regions, request.config)
 
 
 @app.post("/api/v1/validate")

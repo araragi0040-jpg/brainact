@@ -2,15 +2,15 @@
   'use strict';
 
   const RUNTIME_CONFIG = window.VIRTUAL_BRAIN_CONFIG || {};
-  const MODEL_VERSION = RUNTIME_CONFIG.appVersion || 'v013';
-  const STORAGE_KEY = 'virtual-brain-v013-experiments';
-  const SCENARIO_STORAGE_KEY = 'virtual-brain-v013-scenarios';
-  const LEGACY_STORAGE_KEYS = ['virtual-brain-v012-experiments', 'virtual-brain-v011-experiments', 'virtual-brain-v010-experiments', 'virtual-brain-v009-experiments', 'virtual-brain-v008-experiments', 'virtual-brain-v007-experiments', 'virtual-brain-v006-experiments', 'virtual-brain-v005-experiments', 'virtual-brain-v004-experiments', 'virtual-brain-v003-experiments', 'virtual-brain-v002-experiments'];
-  const LEGACY_SCENARIO_STORAGE_KEYS = ['virtual-brain-v012-scenarios', 'virtual-brain-v011-scenarios', 'virtual-brain-v010-scenarios', 'virtual-brain-v009-scenarios', 'virtual-brain-v008-scenarios', 'virtual-brain-v007-scenarios', 'virtual-brain-v006-scenarios', 'virtual-brain-v005-scenarios'];
-  const DATASET_STORAGE_KEY = 'virtual-brain-v013-dataset';
-  const LEGACY_DATASET_STORAGE_KEYS = ['virtual-brain-v012-dataset', 'virtual-brain-v011-dataset'];
-  const ENGINE_STORAGE_KEY = 'virtual-brain-v013-engine';
-  const LEGACY_ENGINE_STORAGE_KEYS = ['virtual-brain-v012-engine'];
+  const MODEL_VERSION = RUNTIME_CONFIG.appVersion || 'v015';
+  const STORAGE_KEY = 'virtual-brain-v015-experiments';
+  const SCENARIO_STORAGE_KEY = 'virtual-brain-v015-scenarios';
+  const LEGACY_STORAGE_KEYS = ['virtual-brain-v014-experiments', 'virtual-brain-v013-experiments', 'virtual-brain-v012-experiments', 'virtual-brain-v011-experiments', 'virtual-brain-v010-experiments', 'virtual-brain-v009-experiments', 'virtual-brain-v008-experiments', 'virtual-brain-v007-experiments', 'virtual-brain-v006-experiments', 'virtual-brain-v005-experiments', 'virtual-brain-v004-experiments', 'virtual-brain-v003-experiments', 'virtual-brain-v002-experiments'];
+  const LEGACY_SCENARIO_STORAGE_KEYS = ['virtual-brain-v014-scenarios', 'virtual-brain-v013-scenarios', 'virtual-brain-v012-scenarios', 'virtual-brain-v011-scenarios', 'virtual-brain-v010-scenarios', 'virtual-brain-v009-scenarios', 'virtual-brain-v008-scenarios', 'virtual-brain-v007-scenarios', 'virtual-brain-v006-scenarios', 'virtual-brain-v005-scenarios'];
+  const DATASET_STORAGE_KEY = 'virtual-brain-v015-dataset';
+  const LEGACY_DATASET_STORAGE_KEYS = ['virtual-brain-v014-dataset', 'virtual-brain-v013-dataset', 'virtual-brain-v012-dataset', 'virtual-brain-v011-dataset'];
+  const ENGINE_STORAGE_KEY = 'virtual-brain-v015-engine';
+  const LEGACY_ENGINE_STORAGE_KEYS = ['virtual-brain-v014-engine', 'virtual-brain-v013-engine', 'virtual-brain-v012-engine'];
   const DATASET_FORMAT = 'virtual-brain-dataset-v1';
   const DT = 0.02;
   const HISTORY_LIMIT = 240;
@@ -186,7 +186,12 @@
       requestCount: 0,
       generation: 0,
       deployment: null,
-      payloadBytes: 0
+      payloadBytes: 0,
+      adapterId: 'native',
+      adapters: [],
+      adapterReport: null,
+      engineState: {},
+      engineDetails: null
     },
     comparison: { active: false, aId: null, bId: null, regionDiffs: {}, maxAbs: 1 },
     networkCanvas: null,
@@ -370,7 +375,7 @@
       'totalSpikes', 'peakSpikes', 'avgSpikes', 'activeRegions',
       'selectionEmpty', 'selectionDetails', 'selectedNodeBadge', 'selectedNodeName', 'selectedNodeType', 'selectionData',
       'atlasSystemFilter', 'atlasSummary', 'atlasHierarchy',
-      'engineMode', 'apiUrl', 'deploymentEnvironment', 'payloadEstimate', 'remoteChunkSize', 'engineLatency', 'engineFallbackToggle', 'testApiBtn', 'validateApiBtn', 'deploymentCheckBtn', 'copyApiUrlBtn', 'engineStatus', 'deploymentStatus',
+      'engineMode', 'engineAdapter', 'engineAdapterStatus', 'apiUrl', 'deploymentEnvironment', 'payloadEstimate', 'remoteChunkSize', 'engineLatency', 'engineFallbackToggle', 'testApiBtn', 'refreshAdaptersBtn', 'validateApiBtn', 'inspectAdapterBtn', 'exportAdapterBtn', 'deploymentCheckBtn', 'copyApiUrlBtn', 'engineSelfTestBtn', 'engineStatus', 'deploymentStatus',
       'dataSourceMode', 'externalDataType', 'externalApplyMode', 'externalSourceName', 'externalSourceVersion', 'externalCoordinateSpace',
       'importDatasetBtn', 'exportDatasetBtn', 'downloadDatasetTemplateBtn', 'resetDatasetBtn', 'externalDataInput', 'externalDataStatus',
       'pathDirection', 'pathDepth', 'pathMetric', 'pathThreshold', 'pathThresholdValue', 'analyzePathBtn', 'clearPathBtn',
@@ -502,8 +507,168 @@
       connected: state.engine.connected,
       serverVersion: state.engine.serverVersion,
       serverEngine: state.engine.serverEngine,
-      latencyMs: state.engine.latencyMs
+      latencyMs: state.engine.latencyMs,
+      adapterId: state.engine.adapterId,
+      adapterName: selectedEngineAdapter()?.name || state.engine.adapterId
     };
+  }
+
+  function selectedEngineAdapter() {
+    return state.engine.adapters.find(item => item.id === state.engine.adapterId) || {
+      id: state.engine.adapterId || 'native',
+      name: state.engine.adapterId === 'native' ? 'Virtual Brain Native' : state.engine.adapterId,
+      status: state.engine.adapterId === 'native' ? 'ready' : 'unknown',
+      executable: state.engine.adapterId === 'native',
+      packageDetected: state.engine.adapterId === 'native',
+      description: 'API接続後に詳細を取得します。',
+      scale: ''
+    };
+  }
+
+  function adapterInspectPayload() {
+    return {
+      regions: REGIONS.map(region => region.id),
+      nodes: state.nodes,
+      edges: state.edges,
+      config: {
+        plasticity: els.plasticityToggle.checked,
+        noise: els.noiseToggle.checked,
+        thresholdScale: Number(els.thresholdScale.value),
+        fatigueStrength: Number(els.fatigueStrength.value),
+        inhibitoryGain: Number(els.inhibitoryGain.value),
+        shortTermPlasticity: els.shortTermPlasticityToggle.checked,
+        homeostasis: els.homeostasisToggle.checked,
+        modelPreset: state.modelPreset
+      }
+    };
+  }
+
+  function renderEngineAdapterOptions() {
+    if (!els.engineAdapter) return;
+    const adapters = state.engine.adapters.length ? state.engine.adapters : [{ id: 'native', name: 'Virtual Brain Native', executable: true, status: 'ready' }];
+    els.engineAdapter.innerHTML = adapters.map(adapter => {
+      const suffix = adapter.executable ? '実行可' : adapter.packageDetected ? '変換準備' : '未導入';
+      return `<option value="${escapeHtml(adapter.id)}">${escapeHtml(adapter.name)}（${suffix}）</option>`;
+    }).join('');
+    if (!adapters.some(adapter => adapter.id === state.engine.adapterId)) state.engine.adapterId = 'native';
+    els.engineAdapter.value = state.engine.adapterId;
+    els.engineAdapter.disabled = state.engine.mode !== 'remote';
+    renderEngineAdapterStatus();
+  }
+
+  function renderEngineAdapterStatus(report = null) {
+    if (!els.engineAdapterStatus) return;
+    const adapter = selectedEngineAdapter();
+    const effectiveReport = report || state.engine.adapterReport;
+    if (effectiveReport && effectiveReport.engine?.id === adapter.id) {
+      const warnings = (effectiveReport.warnings || []).slice(0, 3);
+      els.engineAdapterStatus.className = `adapter-status ${adapter.executable ? 'active' : 'warn'}`;
+      els.engineAdapterStatus.innerHTML = `<strong>${escapeHtml(adapter.name)} / 互換性 ${Number(effectiveReport.score || 0)}%</strong><small>${escapeHtml(adapter.scale || '')} / ${effectiveReport.summary?.nodes || 0}N・${effectiveReport.summary?.edges || 0}E・${effectiveReport.summary?.regions || 0}領域</small>${warnings.length ? `<ul>${warnings.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}<small>${escapeHtml(effectiveReport.recommendedNextStep || '')}</small>`;
+      return;
+    }
+    const statusLabel = adapter.executable ? '直接計算可能' : adapter.packageDetected ? '変換準備のみ' : 'パッケージ未検出・変換準備のみ';
+    els.engineAdapterStatus.className = `adapter-status ${adapter.executable ? 'active' : 'empty-state'}`;
+    els.engineAdapterStatus.innerHTML = `<strong>${escapeHtml(adapter.name)}：${escapeHtml(statusLabel)}</strong><small>${escapeHtml(adapter.description || '')}${adapter.scale ? ` / ${escapeHtml(adapter.scale)}` : ''}</small>`;
+  }
+
+  async function refreshEngineAdapters({ silent = false } = {}) {
+    if (state.engine.mode !== 'remote') {
+      state.engine.adapters = [{ id: 'native', name: 'Virtual Brain Native', executable: true, packageDetected: true, status: 'ready', description: 'ブラウザ内計算ではNativeモデルを使用します。', scale: '概念モデル' }];
+      state.engine.adapterId = 'native';
+      renderEngineAdapterOptions();
+      return true;
+    }
+    if (!state.engine.connected && !(await testApiConnection({ silent: true, skipAdapterRefresh: true }))) return false;
+    try {
+      const data = await apiRequest('/api/v1/engines', { timeout: 8000 });
+      state.engine.adapters = Array.isArray(data.engines) ? data.engines : [];
+      renderEngineAdapterOptions();
+      if (!silent) addEvent(`計算アダプター${state.engine.adapters.length}件を取得`, true);
+      return true;
+    } catch (error) {
+      state.engine.lastError = String(error.message || error);
+      renderEngineStatus();
+      return false;
+    }
+  }
+
+  async function inspectSelectedAdapter() {
+    if (state.engine.mode !== 'remote') await changeEngineMode('remote');
+    if (!state.engine.connected && !(await testApiConnection({ silent: true }))) return;
+    const adapter = selectedEngineAdapter();
+    try {
+      const report = await apiRequest(`/api/v1/engines/${encodeURIComponent(adapter.id)}/compatibility`, {
+        method: 'POST',
+        timeout: 15000,
+        body: adapterInspectPayload()
+      });
+      state.engine.adapterReport = report;
+      renderEngineAdapterStatus(report);
+      addEvent(`${adapter.name}の互換性診断：${report.score}%`, true);
+    } catch (error) {
+      state.engine.lastError = String(error.message || error);
+      renderEngineStatus();
+    }
+  }
+
+  async function exportSelectedAdapter() {
+    if (state.engine.mode !== 'remote') await changeEngineMode('remote');
+    if (!state.engine.connected && !(await testApiConnection({ silent: true }))) return;
+    const adapter = selectedEngineAdapter();
+    try {
+      const manifest = await apiRequest(`/api/v1/engines/${encodeURIComponent(adapter.id)}/export`, {
+        method: 'POST',
+        timeout: 20000,
+        body: adapterInspectPayload()
+      });
+      downloadJsonFile(manifest, `virtual-brain-${MODEL_VERSION}-${adapter.id}-adapter.json`);
+      renderEngineAdapterStatus(manifest.compatibility || null);
+      addEvent(`${adapter.name}用の変換設定を書き出しました`, true);
+    } catch (error) {
+      state.engine.lastError = String(error.message || error);
+      renderEngineStatus();
+    }
+  }
+
+  async function runSelectedEngineSelfTest() {
+    if (state.engine.mode !== 'remote') await changeEngineMode('remote');
+    if (!state.engine.connected && !(await testApiConnection({ silent: true }))) return;
+    const adapter = selectedEngineAdapter();
+    state.engine.lastError = null;
+    renderEngineStatus(`${adapter.name}を確認中`);
+    try {
+      const result = await apiRequest(`/api/v1/engines/${encodeURIComponent(adapter.id)}/self-test`, {
+        method: 'POST',
+        timeout: 20000,
+        body: {}
+      });
+      state.engine.engineDetails = result;
+      const spikeText = result.spikeCount === undefined ? '' : ` / spike ${result.spikeCount}`;
+      const versionText = result.packageVersion ? ` / ${result.packageVersion}` : '';
+      renderEngineStatus(`セルフテストOK${versionText}${spikeText}`);
+      addEvent(`${adapter.name}のセルフテスト完了`, true);
+      await refreshEngineAdapters({ silent: true });
+    } catch (error) {
+      state.engine.lastError = String(error.message || error);
+      renderEngineStatus();
+      addEvent(`${adapter.name}のセルフテストに失敗`, true);
+    }
+  }
+
+  async function changeEngineAdapter(adapterId) {
+    state.engine.adapterId = String(adapterId || 'native');
+    state.engine.adapterReport = null;
+    state.engine.lastError = null;
+    const adapter = selectedEngineAdapter();
+    persistEngineSettings();
+    renderEngineAdapterStatus();
+    if (!adapter.executable) {
+      renderEngineStatus(`${adapter.name}は診断・書き出しのみ`);
+      addEvent(`${adapter.name}を変換対象として選択`, true);
+    } else {
+      renderEngineStatus(`${adapter.name}を選択`);
+      addEvent(`${adapter.name}を計算対象として選択`, true);
+    }
   }
 
   function persistEngineSettings() {
@@ -512,7 +677,8 @@
         mode: state.engine.mode,
         apiUrl: state.engine.apiUrl,
         chunkSize: state.engine.chunkSize,
-        fallback: state.engine.fallback
+        fallback: state.engine.fallback,
+        adapterId: state.engine.adapterId
       }));
     } catch (error) {
       console.warn('計算エンジン設定の保存に失敗しました。', error);
@@ -537,16 +703,20 @@
       state.engine.apiUrl = normalizeApiUrl(staleLocalUrl ? hostedDefault : (savedUrl || hostedDefault));
       state.engine.chunkSize = [1, 4, 8, 16, 32].includes(Number(saved.chunkSize)) ? Number(saved.chunkSize) : Number(RUNTIME_CONFIG.defaultChunkSize || 4);
       state.engine.fallback = saved.fallback !== false && RUNTIME_CONFIG.allowBrowserFallback !== false;
+      state.engine.adapterId = String(saved.adapterId || 'native');
     } catch (error) {
       console.warn('計算エンジン設定の読み込みに失敗しました。', error);
       state.engine.mode = RUNTIME_CONFIG.defaultEngineMode === 'remote' ? 'remote' : 'local';
       state.engine.apiUrl = normalizeApiUrl(RUNTIME_CONFIG.defaultApiUrl);
+      state.engine.adapterId = 'native';
     }
     els.engineMode.value = state.engine.mode;
     els.apiUrl.value = state.engine.apiUrl;
     els.remoteChunkSize.value = String(state.engine.chunkSize);
+    if (els.engineAdapter) els.engineAdapter.value = state.engine.adapterId;
     els.engineFallbackToggle.checked = state.engine.fallback;
     updateDeploymentFields();
+    renderEngineAdapterOptions();
     renderEngineStatus();
     renderDeploymentStatus();
   }
@@ -554,7 +724,7 @@
   function renderEngineStatus(message = '') {
     if (!els.engineStatus) return;
     els.engineMode.value = state.engine.mode;
-    els.engineBadge.textContent = state.engine.mode === 'remote' ? 'Python' : 'ブラウザ';
+    els.engineBadge.textContent = state.engine.mode === 'remote' ? (selectedEngineAdapter().id === 'native' ? 'Python' : selectedEngineAdapter().name) : 'ブラウザ';
     els.engineBadge.className = state.engine.busy ? 'busy' : state.engine.lastError ? 'error' : state.engine.mode === 'remote' ? 'remote' : '';
     if (state.engine.latencyMs === null) els.engineLatency.value = state.engine.mode === 'remote' ? '未接続' : 'ローカル';
     else els.engineLatency.value = `${Math.round(state.engine.latencyMs)} ms`;
@@ -566,12 +736,12 @@
     }
     if (state.engine.lastError) {
       els.engineStatus.className = 'engine-status error';
-      els.engineStatus.innerHTML = `<strong>API接続エラー</strong><small>${escapeHtml(state.engine.lastError)}${state.engine.fallback ? ' / ブラウザ計算へ自動復帰可能' : ''}</small>`;
+      els.engineStatus.innerHTML = `<strong>計算エンジンエラー</strong><small>${escapeHtml(state.engine.lastError)}${state.engine.fallback ? ' / ブラウザ計算へ自動復帰可能' : ''}</small>`;
       return;
     }
     if (state.engine.mode === 'remote' && state.engine.connected) {
       els.engineStatus.className = 'engine-status active';
-      els.engineStatus.innerHTML = `<strong>Python API接続済み</strong><small>${escapeHtml(state.engine.serverEngine || 'python-engine')} / ${escapeHtml(state.engine.serverVersion || '')} / ${Math.round(state.engine.latencyMs || 0)} ms${message ? ` / ${escapeHtml(message)}` : ''}</small>`;
+      els.engineStatus.innerHTML = `<strong>Python API接続済み</strong><small>${escapeHtml(selectedEngineAdapter().name)} / ${escapeHtml(state.engine.serverEngine || 'python-engine')} / ${escapeHtml(state.engine.serverVersion || '')} / ${Math.round(state.engine.latencyMs || 0)} ms${message ? ` / ${escapeHtml(message)}` : ''}</small>`;
       return;
     }
     if (state.engine.mode === 'remote') {
@@ -603,7 +773,7 @@
     }
   }
 
-  async function testApiConnection({ silent = false } = {}) {
+  async function testApiConnection({ silent = false, skipAdapterRefresh = false } = {}) {
     if (state.engine.connecting) return false;
     state.engine.apiUrl = normalizeApiUrl(els.apiUrl.value);
     els.apiUrl.value = state.engine.apiUrl;
@@ -617,6 +787,8 @@
       state.engine.serverEngine = data.engine || null;
       state.engine.deployment = data.deployment || null;
       state.engine.lastError = null;
+      if (Array.isArray(data.adapters)) state.engine.adapters = data.adapters;
+      renderEngineAdapterOptions();
       persistEngineSettings();
       renderEngineStatus('接続確認完了');
       if (!silent) addEvent(`Python API接続：${data.engine || 'engine'} / ${Math.round(state.engine.latencyMs || 0)}ms`, true);
@@ -713,8 +885,13 @@
     state.engine.fallback = els.engineFallbackToggle.checked;
     if (previousMode !== state.engine.mode) state.engine.generation += 1;
     state.engine.lastError = null;
+    if (state.engine.mode === 'local') {
+      state.engine.adapterId = 'native';
+      state.engine.adapterReport = null;
+    }
     persistEngineSettings();
     if (state.engine.mode === 'remote') await testApiConnection({ silent: true });
+    renderEngineAdapterOptions();
     renderEngineStatus();
     addEvent(`計算エンジンを${state.engine.mode === 'remote' ? 'Python API' : 'ブラウザ'}へ切替`, true);
   }
@@ -740,6 +917,7 @@
   function remoteSimulationPayload(steps) {
     return {
       version: MODEL_VERSION,
+      engine_id: state.engine.adapterId || 'native',
       steps,
       dt: DT,
       rng_state: state.engine.rngState >>> 0,
@@ -762,7 +940,8 @@
       },
       stimulus_sequence: plainStimulusSequence(),
       interventions: [...state.interventions.entries()].map(([regionId, intervention]) => ({ regionId, ...intervention })),
-      route_stats: state.analysis.routeStats
+      route_stats: state.analysis.routeStats,
+      engine_state: state.engine.engineState || {}
     };
   }
 
@@ -833,6 +1012,16 @@
 
   async function remoteSimulationChunk(requestedSteps = null) {
     if (state.engine.busy || state.engine.connecting) return false;
+    const adapter = selectedEngineAdapter();
+    if (!adapter.executable) {
+      state.running = false;
+      state.engine.lastError = `${adapter.name}は現在のAPI環境では直接計算できません。互換性診断または変換設定書き出しを利用してください。`;
+      renderEngineStatus();
+      renderEngineAdapterStatus();
+      updateStatus();
+      addEvent(`${adapter.name}の直接計算は未対応`, true);
+      return false;
+    }
     if (!state.engine.connected && !(await testApiConnection({ silent: true }))) {
       if (state.engine.fallback) {
         state.engine.mode = 'local';
@@ -871,6 +1060,9 @@
       state.engine.rngState = Number(response.rngState || state.engine.rngState) >>> 0;
       state.engine.serverVersion = response.version || state.engine.serverVersion;
       state.engine.serverEngine = response.engine || state.engine.serverEngine;
+      state.engine.engineState = response.engineState || state.engine.engineState || {};
+      state.engine.engineDetails = response.engineDetails || null;
+      if (response.engineId) state.engine.adapterId = response.engineId;
       reindexRemoteNetwork();
       for (const frame of response.frames || []) appendRemoteFrame(frame);
       state.totalSpikes = Number(response.totalSpikes ?? state.totalSpikes);
@@ -1190,12 +1382,12 @@
     return {
       format: DATASET_FORMAT,
       source: {
-        name: template ? 'v013ひな型データ' : descriptor.name,
+        name: template ? 'v015ひな型データ' : descriptor.name,
         version: template ? '1.0' : descriptor.version,
         url: '', license: ''
       },
       coordinateSpace: template ? 'normalized' : descriptor.coordinateSpace,
-      note: template ? '既存19領域のIDを使用してください。connectionsのweightは0〜1または0.05〜7.5を利用できます。' : 'v013から書き出した現在の領域・接続設定',
+      note: template ? '既存19領域のIDを使用してください。connectionsのweightは0〜1または0.05〜7.5を利用できます。' : 'v015から書き出した現在の領域・接続設定',
       regions,
       connections: connectionEntries.map(([key, weight]) => {
         const [source, target] = key.split('>');
@@ -1837,6 +2029,8 @@
     state.trialSeed = Math.max(1, Math.floor(Number(els.trialSeedInput.value) || 42));
     state.simRandom = mulberry32((state.seed * 2654435761 + state.trialSeed) >>> 0);
     state.engine.rngState = (state.seed * 2654435761 + state.trialSeed) >>> 0;
+    state.engine.engineState = {};
+    state.engine.engineDetails = null;
     state.engine.generation += 1;
 
     for (const node of state.nodes) {
@@ -4480,7 +4674,7 @@
       ? [...state.propagation.arrivals.entries()].sort((a, b) => a[1].offset - b[1].offset).map(([regionId, item]) => `<tr><th>${escapeHtml(REGION_BY_ID.get(regionId)?.name || regionId)}</th><td>${item.step}</td><td>+${item.offset}</td></tr>`).join('')
       : '<tr><td colspan="3">到達記録なし</td></tr>';
     const generatedAt = new Date().toLocaleString('ja-JP');
-    const html = `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>仮想神経回路 v013 分析レポート</title><style>body{margin:0;background:#f3f6f8;color:#172630;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}main{max-width:1050px;margin:auto;padding:34px 20px}.card,header{background:#fff;border:1px solid #dce5ea;border-radius:14px;padding:20px;margin-bottom:15px}h1{margin:3px 0 7px;font-size:25px}h2{font-size:17px;margin:0 0 12px}p{line-height:1.7;color:#506876}small{color:#738895}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid #e6edf1;text-align:right}th:first-child{text-align:left}.note{background:#f6f9fa;padding:13px;border-radius:9px}.warn{font-size:12px}</style></head><body><main><header><small>VIRTUAL BRAIN LAB / ${MODEL_VERSION}</small><h1>実験結果の詳細分析</h1><p>生成日時：${escapeHtml(generatedAt)} / 分析範囲：${summary.records.length} step / step ${summary.records[0].step}〜${summary.records[summary.records.length - 1].step}</p></header><section class="card"><h2>自動要約</h2><div class="note">${escapeHtml(interpretation)}</div></section><section class="card"><h2>領域別活動</h2><table><thead><tr><th>領域</th><th>発火</th><th>興奮性</th><th>抑制性</th></tr></thead><tbody>${regionRows}</tbody></table></section><section class="card"><h2>刺激後の初回到達</h2><table><thead><tr><th>領域</th><th>step</th><th>遅延</th></tr></thead><tbody>${arrivalRows}</tbody></table></section><section class="card"><h2>信号経路</h2><table><thead><tr><th>経路</th><th>通過</th><th>興奮</th><th>抑制</th><th>|信号|</th></tr></thead><tbody>${routeRows || '<tr><td colspan="5">信号記録なし</td></tr>'}</tbody></table></section><section class="card warn"><strong>注意</strong><p>本レポートはv013概念モデル内部の仮想計算結果です。相関は直接接続や因果関係を示さず、人間の脳活動、診断、治療効果を示すものではありません。</p></section></main></body></html>`;
+    const html = `<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>仮想神経回路 v015 分析レポート</title><style>body{margin:0;background:#f3f6f8;color:#172630;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}main{max-width:1050px;margin:auto;padding:34px 20px}.card,header{background:#fff;border:1px solid #dce5ea;border-radius:14px;padding:20px;margin-bottom:15px}h1{margin:3px 0 7px;font-size:25px}h2{font-size:17px;margin:0 0 12px}p{line-height:1.7;color:#506876}small{color:#738895}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid #e6edf1;text-align:right}th:first-child{text-align:left}.note{background:#f6f9fa;padding:13px;border-radius:9px}.warn{font-size:12px}</style></head><body><main><header><small>VIRTUAL BRAIN LAB / ${MODEL_VERSION}</small><h1>実験結果の詳細分析</h1><p>生成日時：${escapeHtml(generatedAt)} / 分析範囲：${summary.records.length} step / step ${summary.records[0].step}〜${summary.records[summary.records.length - 1].step}</p></header><section class="card"><h2>自動要約</h2><div class="note">${escapeHtml(interpretation)}</div></section><section class="card"><h2>領域別活動</h2><table><thead><tr><th>領域</th><th>発火</th><th>興奮性</th><th>抑制性</th></tr></thead><tbody>${regionRows}</tbody></table></section><section class="card"><h2>刺激後の初回到達</h2><table><thead><tr><th>領域</th><th>step</th><th>遅延</th></tr></thead><tbody>${arrivalRows}</tbody></table></section><section class="card"><h2>信号経路</h2><table><thead><tr><th>経路</th><th>通過</th><th>興奮</th><th>抑制</th><th>|信号|</th></tr></thead><tbody>${routeRows || '<tr><td colspan="5">信号記録なし</td></tr>'}</tbody></table></section><section class="card warn"><strong>注意</strong><p>本レポートはv015概念モデル内部の仮想計算結果です。相関は直接接続や因果関係を示さず、人間の脳活動、診断、治療効果を示すものではありません。</p></section></main></body></html>`;
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
@@ -4653,6 +4847,7 @@
     });
 
     els.engineMode.addEventListener('change', () => changeEngineMode(els.engineMode.value));
+    els.engineAdapter.addEventListener('change', () => changeEngineAdapter(els.engineAdapter.value));
     els.apiUrl.addEventListener('change', () => {
       state.engine.apiUrl = normalizeApiUrl(els.apiUrl.value);
       els.apiUrl.value = state.engine.apiUrl;
@@ -4674,9 +4869,13 @@
       persistEngineSettings();
     });
     els.testApiBtn.addEventListener('click', () => testApiConnection());
+    els.refreshAdaptersBtn.addEventListener('click', () => refreshEngineAdapters());
     els.validateApiBtn.addEventListener('click', validateRemoteNetwork);
+    els.inspectAdapterBtn.addEventListener('click', inspectSelectedAdapter);
+    els.exportAdapterBtn.addEventListener('click', exportSelectedAdapter);
     els.deploymentCheckBtn.addEventListener('click', runDeploymentCheck);
     els.copyApiUrlBtn.addEventListener('click', copyApiUrl);
+    els.engineSelfTestBtn.addEventListener('click', runSelectedEngineSelfTest);
 
     els.dataSourceMode.addEventListener('change', () => activateDataSource(els.dataSourceMode.value));
     els.importDatasetBtn.addEventListener('click', () => els.externalDataInput.click());

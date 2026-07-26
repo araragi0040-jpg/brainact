@@ -1,66 +1,48 @@
-# GitHub・Vercel公開手順（v013）
+# GitHub／Vercel公開手順 v015
 
-## 1. GitHubへ登録
+## GitHub
 
-### GitHubの画面から行う場合
-
-1. GitHubで新しい空のリポジトリを作成します。
-2. README・ライセンス・`.gitignore`はGitHub側では追加せず、空の状態にします。
-3. このフォルダ内のファイルをすべてアップロードします。
-4. コミット後、リポジトリ直下に`index.html`、`app.js`、`api/index.py`、`vercel.json`があることを確認します。
-
-### Gitコマンドを使う場合
-
-```bash
-git init -b main
-git add .
-git commit -m "Add Virtual Brain Lab v013"
-git remote add origin <GitHubリポジトリURL>
-git push -u origin main
-```
-
-## 2. Vercelへ接続
-
-1. Vercelへログインします。
-2. `Add New` → `Project`を選択します。
-3. GitHubのv013リポジトリを`Import`します。
-4. Framework Presetは`Other`または自動判定のままで進めます。
-5. Root Directoryはリポジトリ直下のままにします。
-6. Build Command、Output Directory、Install Commandは空欄または自動設定のままにします。
-7. `Deploy`を押します。
-
-公開後、次を確認します。
-
-- トップ画面が表示される
-- 計算エンジンがPython APIを選択している
-- 「API接続テスト」が成功する
-- `https://公開URL/api/health`でJSONが表示される
-- 「公開環境診断」が正常になる
-
-## 3. 更新方法
-
-GitHubの`main`ブランチへ更新をpushすると、Vercelで本番デプロイが実行されます。別ブランチやPull RequestではPreview Deploymentを使えます。
+v015フォルダの中身をリポジトリ直下へ登録します。
 
 ```bash
 git add .
-git commit -m "Update virtual brain"
+git commit -m "Update Virtual Brain Lab to v015"
 git push
 ```
 
-## 4. ローカル動作
+## Vercel設定
 
-```bash
-python -m pip install -r requirements.txt
+- Framework Preset: Other
+- Root Directory: 空欄
+- Build Command: 空欄
+- Output Directory: 空欄
+- Install Command: 空欄
+
+公開後の確認先:
+
+```text
+https://公開URL/
+https://公開URL/api/health
+https://公開URL/api/v1/engines
 ```
 
-Windowsは`start_all.bat`、macOS／Linuxは`./start_all.sh`を実行します。
+`/api/health`の`version`が`v015`なら更新済みです。
 
-- 画面：`http://127.0.0.1:8080`
-- API：`http://127.0.0.1:8765/api/health`
+## Vercel上のBrian2
 
-## 5. 公開時の注意
+標準の`requirements.txt`はBrian2を含みません。そのためVercel上では:
 
-- 実験結果とシナリオはブラウザの`localStorage`へ保存され、利用端末間では自動共有されません。
-- Python APIは計算要求ごとに状態を受け取り、結果を返します。サーバー側へ個人の実験状態を永続保存しません。
-- 公開APIには入力件数の上限を設定しています。
-- このシステムは概念モデルであり、医療・診断・治療判断には使用できません。
+- Native Python計算: 利用可能
+- Brian2直接計算: 未導入表示
+- Brian2互換性診断・変換設定: 利用可能
+
+まずローカルでBrian2を検証し、将来必要になった段階で専用Python計算環境へ分離する構成を推奨します。
+
+## キャッシュ
+
+デプロイ後に旧画面が残る場合:
+
+- Windows: `Ctrl + F5`
+- macOS: `Command + Shift + R`
+
+`public/index.html`、`public/app.js`、`public/config.js`の参照番号はv015に更新済みです。

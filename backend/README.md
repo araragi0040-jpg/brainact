@@ -1,10 +1,26 @@
-# ローカルPython API
+# Backend v015
 
-実装本体は`../api/index.py`です。Vercelとローカルで同じFastAPIアプリを使用します。
+FastAPIによる計算APIです。
+
+## 通常起動
 
 ```bash
-python -m pip install -r ../requirements.txt
+pip install -r requirements.txt
 python -m uvicorn api.index:app --host 127.0.0.1 --port 8765
 ```
 
-確認：`http://127.0.0.1:8765/api/health`
+## Brian2対応
+
+```bash
+pip install -r requirements-brian2.txt
+python -m uvicorn api.index:app --host 127.0.0.1 --port 8765
+```
+
+主なAPI:
+
+- `GET /api/health`
+- `GET /api/v1/engines`
+- `POST /api/v1/engines/{engine_id}/self-test`
+- `POST /api/v1/engines/{engine_id}/compatibility`
+- `POST /api/v1/engines/{engine_id}/export`
+- `POST /api/v1/simulate`

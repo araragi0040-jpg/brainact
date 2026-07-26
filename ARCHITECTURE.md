@@ -1,44 +1,56 @@
-# v013 アーキテクチャ
+# v015 システム構成
 
-## 公開構成
+## 全体
 
 ```text
-GitHub repository
-├─ index.html / app.js / styles.css / config.js
-│        ↓ Vercel Static Assets
-│   ブラウザUI・2D/3D表示・実験管理・localStorage
-│
-└─ api/index.py
-         ↓ Vercel Python Function / FastAPI
-    /api/health
-    /api/v1/diagnostics
-    /api/v1/validate
-    /api/v1/simulate
+public/
+  index.html
+  app.js
+  styles.css
+  config.js
+        │
+        ├─ ブラウザ内Native計算
+        │
+        └─ FastAPI /api/v1/simulate
+              ├─ Native Python engine
+              └─ Brian2 adapter（任意導入）
 ```
 
-## 状態の扱い
+## Brian2アダプター
 
-v013はVercelのサーバーレス実行に合わせ、サーバー側に実験セッションを保持しません。
+`backend/brian2_engine.py`が、画面側のノード・接続データをBrian2へ変換します。
 
-1. ブラウザが現在のニューロン・接続状態を保持します。
-2. Python計算時に必要な状態をJSONで送信します。
-3. APIが複数stepを計算します。
-4. 更新後の状態と分析フレームを返します。
-5. ブラウザが2D・3D表示、分析、実験保存へ反映します。
+### ニューロン
 
-この方式は通信量が増える一方、Vercel Functionが別インスタンスで実行されても計算状態を失いません。
+- 次元なしLeaky Integrate-and-Fire
+- 個別の膜時定数
+- 個別の発火閾値
+- 疲労・順応変数
+- 概念stepをBrian2内部のミリ秒へ変換
 
-## v013で追加した公開対策
+### シナプス
 
-- 実行環境に応じたAPI URL自動判定
-- Vercelでは同一オリジンAPIへ接続
-- ローカルでは`127.0.0.1:8765`へ接続
-- API失敗時のブラウザ計算フォールバック
-- 推定JSON送信量の表示
-- 公開環境診断
-- nodes・edges件数のAPI上限
-- GitHub／Vercel用構成ファイル
+- 興奮性／抑制性
+- 個別結合強度
+- 個別伝達遅延
+- 短期抑圧・短期促通
+- 任意のSTDP近似
 
-## 今後
+### 状態の受け渡し
 
-大規模化する際は、全状態送信から外部永続ストレージを利用したセッション管理へ移行します。候補はVercel KV互換ストレージ、PostgreSQL、専用Python計算基盤です。
+Vercel Functionsや通常のHTTP APIでは、サーバーのメモリ状態を継続利用しない前提です。そのため、各リクエストで以下を送受信します。
+
+- ニューロン状態
+- シナプス状態
+- RNG状態
+- 刺激シーケンス
+- 経路集計
+- Brian2内部の経過時間
+
+これにより、計算サーバーがステートレスでも継続実行できます。
+
+## 制限
+
+- v015のBrian2計算は初期統合であり、生物学的妥当性を検証したモデルではありません。
+- 独自モデルとBrian2モデルは計算式が異なるため、結果は完全一致しません。
+- NESTとThe Virtual Brainは引き続き診断・変換マニフェストまでです。

@@ -1,63 +1,94 @@
-# 仮想神経回路 v013 Vercel修正版
+# 仮想神経回路 v015
 
-> トップURLで `{"detail":"Not Found"}` が表示される問題を修正し、静的画面を `public/` から配信する構成へ変更しています。詳細は `VERCEL_FIX.md` を参照してください。
+人間の脳内活動を概念的に再現し、刺激・伝播・学習・介入・比較を2D／3Dで観察するWebアプリです。
 
-v013は、v012のブラウザ／Python分離構成をGitHub・Vercelへそのまま公開できる形に再構成した版です。
+v015では、v014で用意した外部エンジン用アダプターを使い、**Brian2による直接計算の初期統合**を追加しました。Native計算は引き続き利用でき、Brian2が未導入の環境では誤って実行せず、導入方法を表示します。
 
-- 静的フロントエンド：`index.html`、`app.js`、`styles.css`、`config.js`
-- Vercel Python API：`api/index.py`
-- ローカル互換起動：`backend/server.py`、`start_all.bat`、`start_all.sh`
-- GitHub／Vercel設定：`vercel.json`、`.python-version`、`requirements.txt`
+## v015の主な追加
 
-本アプリは仮説検証用の概念モデルです。人間の脳活動の完全再現、診断、治療判断、個人の脳状態推定には使用できません。
+- Brian2パッケージの自動検出
+- Brian2直接計算アダプター
+- 次元なしLIFニューロンモデルへの変換
+- ニューロンごとの膜時定数・閾値・疲労・順応
+- 興奮性／抑制性シナプス
+- 接続ごとの伝達遅延
+- 短期シナプス可塑性
+- 任意のSTDP近似
+- 刺激シーケンスと仮想介入の反映
+- Brian2の計算結果を既存の2D／3D／分析画面へ反映
+- エンジンごとのセルフテスト
+- Brian2の内部時間・パッケージバージョン・計算方式をAPI結果へ記録
+- v014の実験・シナリオ・データセット・計算設定を移行
 
-## v013の追加内容
+## 現在の対応範囲
 
-- GitHub／Vercelへ直接配置できる1リポジトリ構成
-- 公開環境では同一ドメインのPython APIを自動使用
-- ローカル・公開・ファイル実行の自動判定
-- API接続先の自動初期設定
-- 公開環境診断
-- API URLコピー
-- 推定送信データ量表示
-- 32stepバッチ計算
-- API入力件数制限
-- 接続失敗時のブラウザ計算継続
-- v012の保存済み実験・シナリオ・データセットを移行
+| エンジン | 直接計算 | 互換性診断 | 変換設定出力 |
+|---|---:|---:|---:|
+| Virtual Brain Native | 対応 | 対応 | 対応 |
+| Brian2 | ローカル任意導入 | 対応 | 対応 |
+| NEST Simulator | 未対応 | 対応 | 対応 |
+| The Virtual Brain | 未対応 | 対応 | 対応 |
 
-## Vercel公開
+## 通常のローカル起動
 
-詳しい操作は`DEPLOYMENT_GUIDE.md`を確認してください。
+初回:
 
-基本的には、フォルダ内をGitHubリポジトリへ登録し、そのリポジトリをVercelでImportするだけです。
+```bash
+pip install -r requirements.txt
+```
 
-公開後の確認URL：
+Windows:
 
 ```text
-https://あなたのVercel URL/api/health
+start_all.bat
 ```
 
-## ローカル起動
+macOS／Linux:
 
 ```bash
-python -m pip install -r requirements.txt
-```
-
-Windows：`start_all.bat`
-
-macOS／Linux：
-
-```bash
-chmod +x start_all.sh backend/start_server.sh start_frontend.sh
+chmod +x start_all.sh
 ./start_all.sh
 ```
 
-- UI：`http://127.0.0.1:8080`
-- API：`http://127.0.0.1:8765/api/health`
+画面は `http://127.0.0.1:8080`、APIは `http://127.0.0.1:8765` です。
 
-## データ保存
+## Brian2を使用する場合
 
-実験、シナリオ、外部データ設定はブラウザの`localStorage`へ保存されます。Vercelサーバーへ自動保存されるものではありません。
-## v013.1 公開版修正
+Windows:
 
-公開画面で全ボタンが反応しない問題を修正しました。原因と反映方法は `BUTTON_FIX.md` を参照してください。
+```text
+install_brian2.bat
+```
+
+macOS／Linux:
+
+```bash
+./install_brian2.sh
+```
+
+手動の場合:
+
+```bash
+pip install -r requirements-brian2.txt
+```
+
+その後アプリを起動し、次の順番で操作します。
+
+1. 計算エンジンを「Python API計算」にする
+2. 「API接続テスト」を押す
+3. Python計算アダプターで「Brian2」を選ぶ
+4. 「選択エンジン動作確認」を押す
+5. 刺激または実験テンプレートを実行する
+
+## GitHub／Vercel
+
+Vercelの標準公開構成では、軽量で安定したNative Python計算を使用します。`requirements.txt`へBrian2を入れていないため、Vercel上ではBrian2は「未導入」と表示されます。
+
+Brian2はNumPy・SciPy等を含むため、まずローカルまたは専用Pythonサーバーで検証する方針です。画面とAPIを別ドメインに分ける場合は、API側の`ALLOWED_ORIGINS`へVercel URLを設定してください。
+
+## 注意
+
+- 本アプリは概念モデルです。
+- Brian2への変換も、現在の独自パラメータをLIF／STP／STDPへ近似したものです。
+- 人間の脳活動を忠実に再現したものではありません。
+- 診断、治療、医療判断には使用できません。
