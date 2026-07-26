@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>仮想神経回路 v012</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">VIRTUAL BRAIN LAB / CONCEPT MODEL</p>
+        <h1>仮想神経回路 <span>v012</span></h1>
+      </div>
+      <div class="status-row" aria-live="polite">
+        <span class="status-dot" id="runStatusDot"></span>
+        <span id="runStatusText">停止中</span>
+        <span class="divider"></span>
+        <span>step <strong id="stepCount">0</strong></span>
+        <span>time <strong id="simTime">0.00</strong>s</span>
+        <span class="divider"></span>
+        <span>data <strong id="dataSourceBadge">内蔵</strong></span>
+        <span class="divider"></span>
+        <span>engine <strong id="engineBadge">ブラウザ</strong></span>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="panel controls-panel">
+        <section>
+          <div class="section-title-row">
+            <h2>刺激設定</h2>
+            <span class="mini-badge">反復対応</span>
+          </div>
+
+          <label class="field">
+            <span>刺激プリセット</span>
+            <select id="stimulusPreset">
+              <option value="visual">視覚入力</option>
+              <option value="auditory">聴覚入力</option>
+              <option value="somatic">体性感覚入力</option>
+              <option value="memory">記憶想起</option>
+              <option value="emotion">情動入力</option>
+              <option value="mixed">視聴覚の複合入力</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>刺激強度 <strong id="stimulusStrengthValue">1.20</strong></span>
+            <input id="stimulusStrength" type="range" min="0.10" max="2.50" step="0.05" value="1.20" />
+          </label>
+
+          <label class="field">
+            <span>刺激時間 <strong id="stimulusDurationValue">12</strong> step</span>
+            <input id="stimulusDuration" type="range" min="1" max="60" step="1" value="12" />
+          </label>
+
+          <div class="two-fields">
+            <label class="field">
+              <span>反復回数</span>
+              <select id="stimulusRepeats">
+                <option value="1">1回</option>
+                <option value="2">2回</option>
+                <option value="3" selected>3回</option>
+                <option value="5">5回</option>
+                <option value="8">8回</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>反復間隔</span>
+              <select id="stimulusInterval">
+                <option value="5">5 step</option>
+                <option value="10" selected>10 step</option>
+                <option value="20">20 step</option>
+                <option value="40">40 step</option>
+              </select>
+            </label>
+          </div>
+
+          <button class="primary full" id="stimulateBtn">刺激シーケンスを開始</button>
+          <div class="sequence-status" id="sequenceStatus">刺激は予約されていません。</div>
+        </section>
+
+        <section>
+          <h2>シミュレーション</h2>
+          <div class="button-grid">
+            <button class="primary" id="playBtn">再生</button>
+            <button id="pauseBtn">停止</button>
+            <button id="stepBtn">1 step</button>
+            <button id="resetBtn">状態リセット</button>
+          </div>
+          <button class="full sub-action" id="resetLearningBtn">学習結果も初期化</button>
+
+          <label class="field">
+            <span>再生速度</span>
+            <select id="speedSelect">
+              <option value="0.5">0.5×</option>
+              <option value="1" selected>1×</option>
+              <option value="2">2×</option>
+              <option value="4">4×</option>
+              <option value="8">8×</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>自動停止</span>
+            <select id="autoStopSelect">
+              <option value="0">使用しない</option>
+              <option value="100">100 step</option>
+              <option value="250" selected>250 step</option>
+              <option value="500">500 step</option>
+              <option value="1000">1,000 step</option>
+            </select>
+          </label>
+
+          <label class="switch-row">
+            <span>シナプス可塑性</span>
+            <input id="plasticityToggle" type="checkbox" checked />
+          </label>
+          <label class="switch-row">
+            <span>ランダムノイズ</span>
+            <input id="noiseToggle" type="checkbox" checked />
+          </label>
+        </section>
+
+        <section>
+          <div class="section-title-row">
+            <h2>モデル設定</h2>
+            <span class="mini-badge muted">再現可能</span>
+          </div>
+          <label class="field">
+            <span>モデルプリセット</span>
+            <select id="modelPreset">
+              <option value="standard" selected>標準バランス</option>
+              <option value="learning">学習しやすい</option>
+              <option value="inhibition">抑制が強い</option>
+              <option value="hyper">過活動</option>
+              <option value="fatigue">疲労しやすい</option>
+              <option value="recovery">回復しやすい</option>
+            </select>
+          </label>
+          <div id="modelPresetDescription" class="model-preset-description"></div>
+
+          <div class="two-fields">
+            <label class="field">
+              <span>構造seed</span>
+              <input id="seedInput" type="number" min="1" max="999999" value="2002" />
+            </label>
+            <label class="field">
+              <span>試行seed</span>
+              <input id="trialSeedInput" type="number" min="1" max="999999" value="42" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>発火しやすさ <strong id="thresholdScaleValue">1.00</strong></span>
+            <input id="thresholdScale" type="range" min="0.75" max="1.25" step="0.01" value="1.00" />
+          </label>
+
+          <label class="field">
+            <span>個体差 <strong id="heterogeneityValue">0.60</strong></span>
+            <input id="heterogeneity" type="range" min="0" max="1" step="0.05" value="0.60" />
+          </label>
+
+          <label class="field">
+            <span>疲労の影響 <strong id="fatigueStrengthValue">0.45</strong></span>
+            <input id="fatigueStrength" type="range" min="0" max="1" step="0.05" value="0.45" />
+          </label>
+
+          <label class="field">
+            <span>抑制性出力 <strong id="inhibitoryGainValue">1.00</strong></span>
+            <input id="inhibitoryGain" type="range" min="0.50" max="1.60" step="0.05" value="1.00" />
+          </label>
+
+          <label class="field">
+            <span>接続密度 <strong id="connectionDensityValue">5</strong>本/ニューロン</span>
+            <input id="connectionDensity" type="range" min="3" max="9" step="1" value="5" />
+          </label>
+
+          <label class="switch-row">
+            <span>短期シナプス可塑性</span>
+            <input id="shortTermPlasticityToggle" type="checkbox" checked />
+          </label>
+          <label class="switch-row">
+            <span>恒常性調整</span>
+            <input id="homeostasisToggle" type="checkbox" checked />
+          </label>
+
+          <button class="full primary" id="applyPresetBtn">プリセットを適用して再生成</button>
+          <button class="full" id="regenerateBtn">現在設定でネットワーク再生成</button>
+          <div id="modelMonitor" class="model-monitor"></div>
+          <p class="hint">構造seed、個体差、接続密度、プリセットが同じなら同一構造を再生成します。試行seedはノイズと初期電位を再現します。</p>
+        </section>
+
+        <section class="template-section">
+          <div class="section-title-row">
+            <h2>実験テンプレート</h2>
+            <span class="mini-badge warn">7種類</span>
+          </div>
+          <p class="section-copy">目的に応じたモデル条件と段階プロトコルを読み込み、そのままガイド実行できます。</p>
+          <label class="field">
+            <span>テンプレート</span>
+            <select id="templateSelect">
+              <option value="repeated-learning">反復学習</option>
+              <option value="forgetting">忘却・保持</option>
+              <option value="multisensory">複合刺激</option>
+              <option value="attention">注意の競合</option>
+              <option value="region-block">領域遮断</option>
+              <option value="low-inhibition">抑制低下</option>
+              <option value="learning-before-after">学習前後比較</option>
+            </select>
+          </label>
+          <div id="templateDetail" class="template-detail"></div>
+          <div class="two-fields">
+            <label class="field" id="templateTargetField">
+              <span>対象領域</span>
+              <select id="templateTargetRegion"></select>
+            </label>
+            <label class="field">
+              <span>検証強度</span>
+              <select id="templateIntensity">
+                <option value="gentle">弱め</option>
+                <option value="standard" selected>標準</option>
+                <option value="strong">強め</option>
+              </select>
+            </label>
+          </div>
+          <label class="switch-row">
+            <span>節目と最終結果を自動保存</span>
+            <input id="templateAutoSave" type="checkbox" checked />
+          </label>
+          <div class="button-grid">
+            <button id="applyTemplateBtn">条件を適用</button>
+            <button class="primary" id="runTemplateBtn">ガイド実行</button>
+          </div>
+          <div id="templateTimeline" class="template-timeline"></div>
+          <div id="templateStatus" class="template-status empty-state">テンプレートを選択してください。</div>
+        </section>
+
+        <section>
+          <div class="section-title-row">
+            <h2>実験シナリオ</h2>
+            <span class="mini-badge">再実行</span>
+          </div>
+          <p class="section-copy">現在の刺激・モデル・介入条件を一式で保存し、同じ条件から再実行します。</p>
+          <label class="field">
+            <span>シナリオ名</span>
+            <input id="scenarioName" type="text" maxlength="50" placeholder="例：視覚刺激＋海馬抑制" />
+          </label>
+          <div class="two-fields">
+            <label class="field">
+              <span>実行step</span>
+              <select id="scenarioRunSteps">
+                <option value="100">100</option>
+                <option value="250" selected>250</option>
+                <option value="500">500</option>
+                <option value="1000">1,000</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>初期化</span>
+              <select id="scenarioResetMode">
+                <option value="state">状態のみ</option>
+                <option value="learning" selected>学習も初期化</option>
+              </select>
+            </label>
+          </div>
+          <label class="switch-row">
+            <span>完了時に結果を自動保存</span>
+            <input id="scenarioAutoSave" type="checkbox" checked />
+          </label>
+          <button class="full" id="saveScenarioBtn">現在条件をシナリオ保存</button>
+          <label class="field">
+            <span>保存済みシナリオ</span>
+            <select id="scenarioSelect"><option value="">選択してください</option></select>
+          </label>
+          <div class="button-grid">
+            <button id="loadScenarioBtn">条件を読込</button>
+            <button class="primary" id="runScenarioBtn">再現実行</button>
+          </div>
+          <button class="full sub-action" id="deleteScenarioBtn">選択シナリオを削除</button>
+          <div id="scenarioStatus" class="scenario-status empty-state">保存済みシナリオはありません。</div>
+        </section>
+      </aside>
+
+      <section class="center-column">
+        <article class="panel network-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>仮想神経ネットワーク</h2>
+              <p>19の解剖学的領域を、実験テンプレート、近似3D表面、詳細分析、ブラウザ／Python計算エンジンと連動させて観察します。</p>
+            </div>
+            <div class="view-tools">
+              <label>
+                <span>表示</span>
+                <select id="viewMode">
+                  <option value="neurons">ニューロン</option>
+                  <option value="regions">脳領域（2D）</option>
+                  <option value="brain3d">脳全体（解剖3D）</option>
+                </select>
+              </label>
+              <label>
+                <span>接続</span>
+                <select id="connectionFilter">
+                  <option value="all">全体</option>
+                  <option value="active">活動中のみ</option>
+                  <option value="selected">選択関連のみ</option>
+                </select>
+              </label>
+              <label>
+                <span>関係表示</span>
+                <select id="relationDisplay">
+                  <option value="structure">構造接続</option>
+                  <option value="activity">最近の活動</option>
+                  <option value="functional">機能的関連</option>
+                  <option value="learning">学習変化</option>
+                  <option value="trace">解析経路のみ</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="brain3d-controls hidden" id="brain3dControls">
+              <div class="brain3d-row">
+                <label><span>半球</span><select id="hemisphereSelect"><option value="both">左右</option><option value="left">左のみ</option><option value="right">右のみ</option></select></label>
+                <label><span>表面</span><select id="surfaceStyleSelect"><option value="solid">半透明面</option><option value="dots">点群</option><option value="wire">輪郭線</option></select></label>
+                <label class="compact-check"><input id="shellToggle" type="checkbox" checked />外形</label>
+                <label class="compact-check"><input id="labelsToggle" type="checkbox" checked />名称</label>
+                <label class="compact-check"><input id="deepToggle" type="checkbox" checked />皮質下</label>
+              </div>
+              <div class="brain3d-row slice-row">
+                <label><span>切開</span><select id="sliceAxisSelect"><option value="none">なし</option><option value="sagittal">矢状面</option><option value="coronal">冠状面</option><option value="axial">水平面</option></select></label>
+                <input id="slicePosition" type="range" min="-0.9" max="0.9" step="0.02" value="0" disabled aria-label="切開位置" />
+                <span id="slicePositionLabel">0.00</span>
+                <label class="compact-check"><input id="isolateSelectedToggle" type="checkbox" />選択領域のみ</label>
+              </div>
+              <div class="brain3d-row view-preset-row" id="viewPresetButtons">
+                <span>視点</span>
+                <button type="button" data-view-preset="front">正面</button>
+                <button type="button" data-view-preset="side">側面</button>
+                <button type="button" data-view-preset="top">上面</button>
+                <button type="button" data-view-preset="back">後面</button>
+                <button type="button" data-view-preset="perspective" class="active">立体</button>
+                <label class="compact-check"><input id="autoRotateToggle" type="checkbox" />自動回転</label>
+                <button id="reset3DViewBtn" type="button">リセット</button>
+              </div>
+              <div class="brain3d-row history-row">
+                <button id="liveViewBtn" type="button" class="live active">LIVE</button>
+                <input id="historyStepSlider" type="range" min="0" max="0" step="1" value="0" aria-label="3D活動履歴" />
+                <span id="historyStepLabel">現在</span>
+              </div>
+              <p>ドラッグ：回転　ホイール：拡大縮小　切開：内部表示　領域クリック：詳細</p>
+            </div>
+          <div class="canvas-stage" id="networkStage">
+            <canvas id="networkCanvas" aria-label="仮想神経ネットワーク"></canvas>
+            <div class="region-labels" id="regionLabels"></div>
+            <div class="canvas-overlay top-left" id="networkLegend">
+              <span><i class="legend-dot excitatory"></i>興奮性</span>
+              <span><i class="legend-dot inhibitory"></i>抑制性</span>
+              <span><i class="legend-line active"></i>活動中</span>
+              <span><i class="legend-ring fatigue"></i>疲労</span>
+            </div>
+            <div class="comparison-overlay hidden" id="comparisonBadge"></div>
+            <div class="canvas-overlay bottom-right" id="focusHint">ノードまたは領域をクリックして関連を確認</div>
+          </div>
+        </article>
+
+        <article class="panel chart-panel">
+          <div class="panel-heading compact">
+            <div>
+              <h2>活動推移</h2>
+              <p id="chartCaption">全体発火数と選択領域の直近240 step</p>
+            </div>
+            <div class="chart-heading-actions">
+              <div class="metric-pills">
+                <span>総発火 <strong id="totalSpikes">0</strong></span>
+                <span>ピーク <strong id="peakSpikes">0</strong></span>
+                <span>平均 <strong id="avgSpikes">0.0</strong></span>
+                <span>活動領域 <strong id="activeRegions">0</strong></span>
+              </div>
+              <button class="analysis-launch" id="openAnalysisBtn" type="button">詳細分析を開く</button>
+            </div>
+          </div>
+          <div class="chart-stage" id="chartStage">
+            <canvas id="activityChart" aria-label="活動推移グラフ"></canvas>
+          </div>
+        </article>
+      </section>
+
+      <aside class="panel info-panel">
+        <section>
+          <h2>選択中の要素</h2>
+          <div id="selectionEmpty" class="empty-state">ノードまたは領域をクリックすると詳細を表示します。</div>
+          <div id="selectionDetails" class="selection-details hidden">
+            <div class="selection-title">
+              <span class="node-badge" id="selectedNodeBadge"></span>
+              <div>
+                <strong id="selectedNodeName"></strong>
+                <small id="selectedNodeType"></small>
+              </div>
+            </div>
+            <dl id="selectionData"></dl>
+          </div>
+        </section>
+
+        <section>
+          <div class="section-title-row">
+            <h2>脳領域アトラス</h2>
+            <span class="mini-badge">19領域</span>
+          </div>
+          <p class="section-copy">概念的な機能名から、実在する解剖学的名称と階層へ整理しました。</p>
+          <label class="field">
+            <span>機能系で絞り込み</span>
+            <select id="atlasSystemFilter">
+              <option value="all">すべて</option>
+              <option value="感覚系">感覚系</option>
+              <option value="連合系">連合系</option>
+              <option value="中継系">中継系</option>
+              <option value="内受容系">内受容系</option>
+              <option value="記憶系">記憶系</option>
+              <option value="情動系">情動系</option>
+              <option value="顕著性系">顕著性系</option>
+              <option value="実行制御系">実行制御系</option>
+              <option value="価値判断系">価値判断系</option>
+              <option value="行動選択系">行動選択系</option>
+              <option value="運動系">運動系</option>
+              <option value="運動調整系">運動調整系</option>
+              <option value="恒常性系">恒常性系</option>
+              <option value="生命維持系">生命維持系</option>
+            </select>
+          </label>
+          <div id="atlasSummary" class="atlas-summary"></div>
+          <div id="atlasHierarchy" class="atlas-hierarchy"></div>
+          <p class="hint">名称と大まかな位置は解剖学に沿いますが、領域サイズ・接続強度・発火計算は仮説モデルです。</p>
+        </section>
+
+        <section class="engine-section">
+          <div class="section-title-row">
+            <h2>計算エンジン</h2>
+            <span class="mini-badge warn">v012</span>
+          </div>
+          <p class="section-copy">表示・操作はブラウザ、発火計算はブラウザ内またはPython APIで実行します。</p>
+          <label class="field">
+            <span>使用エンジン</span>
+            <select id="engineMode">
+              <option value="local">ブラウザ内計算</option>
+              <option value="remote">Python API計算</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>API URL</span>
+            <input id="apiUrl" type="url" value="http://127.0.0.1:8765" spellcheck="false" />
+          </label>
+          <div class="two-fields">
+            <label class="field">
+              <span>1回の計算量</span>
+              <select id="remoteChunkSize">
+                <option value="1">1 step</option>
+                <option value="4" selected>4 step</option>
+                <option value="8">8 step</option>
+                <option value="16">16 step</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>接続状態</span>
+              <input id="engineLatency" type="text" value="未接続" readonly />
+            </label>
+          </div>
+          <label class="switch-row">
+            <span>接続失敗時はブラウザ計算へ戻す</span>
+            <input id="engineFallbackToggle" type="checkbox" checked />
+          </label>
+          <div class="button-grid">
+            <button class="primary" id="testApiBtn">API接続テスト</button>
+            <button id="validateApiBtn">現在モデルを検証</button>
+          </div>
+          <div id="engineStatus" class="engine-status empty-state">ブラウザ内計算を使用しています。</div>
+          <p class="hint">Python利用時は、先に <code>backend/start_server.bat</code> または <code>start_server.sh</code> を実行してください。テンプレート実行中は段階切替を正確にするため1stepずつ送信します。</p>
+        </section>
+
+        <section>
+          <div class="section-title-row">
+            <h2>外部データ接続</h2>
+            <span class="mini-badge">v012</span>
+          </div>
+          <p class="section-copy">領域情報・3D座標・接続データをローカルのJSON／CSVから読み込み、内蔵モデルと切り替えます。</p>
+          <label class="field">
+            <span>使用データ</span>
+            <select id="dataSourceMode">
+              <option value="builtin">内蔵19領域モデル</option>
+              <option value="external">読み込みデータ</option>
+            </select>
+          </label>
+          <div class="two-fields">
+            <label class="field">
+              <span>CSV種別</span>
+              <select id="externalDataType">
+                <option value="auto">自動判定</option>
+                <option value="regions">領域・座標</option>
+                <option value="connections">接続エッジ</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>反映方法</span>
+              <select id="externalApplyMode">
+                <option value="merge">内蔵データへ統合</option>
+                <option value="replace-connections">接続のみ置換</option>
+              </select>
+            </label>
+          </div>
+          <label class="field">
+            <span>出典・データセット名</span>
+            <input id="externalSourceName" type="text" maxlength="80" placeholder="例：公開アトラス検証データ" />
+          </label>
+          <div class="two-fields">
+            <label class="field">
+              <span>バージョン</span>
+              <input id="externalSourceVersion" type="text" maxlength="30" placeholder="例：2026-01" />
+            </label>
+            <label class="field">
+              <span>座標空間</span>
+              <input id="externalCoordinateSpace" type="text" maxlength="30" placeholder="例：normalized" />
+            </label>
+          </div>
+          <div class="button-grid">
+            <button class="primary" id="importDatasetBtn">データを読み込む</button>
+            <button id="exportDatasetBtn">現在データを書き出す</button>
+          </div>
+          <div class="button-grid">
+            <button id="downloadDatasetTemplateBtn">ひな型JSON</button>
+            <button id="resetDatasetBtn">内蔵データへ戻す</button>
+          </div>
+          <input id="externalDataInput" type="file" accept="application/json,text/csv,.json,.csv" hidden />
+          <div id="externalDataStatus" class="dataset-status empty-state">内蔵19領域モデルを使用しています。</div>
+          <p class="hint">v012では、既存19領域のIDに一致するデータを安全に統合し、Python計算時にも同じ領域・接続情報を送信します。未知の領域IDは無視し、結果を読み込み履歴に表示します。</p>
+        </section>
+
+        <section>
+          <div class="section-title-row">
+            <h2>関連・経路解析</h2>
+            <span class="mini-badge">v012</span>
+          </div>
+          <p class="section-copy">選択領域を起点に、入力元・出力先と到達経路を段階表示します。</p>
+          <div class="two-fields">
+            <label class="field">
+              <span>解析方向</span>
+              <select id="pathDirection">
+                <option value="out">出力先へ</option>
+                <option value="in">入力元へ</option>
+                <option value="both">双方向</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>深さ</span>
+              <select id="pathDepth">
+                <option value="1">1段階</option>
+                <option value="2" selected>2段階</option>
+                <option value="3">3段階</option>
+                <option value="4">4段階</option>
+              </select>
+            </label>
+          </div>
+          <label class="field">
+            <span>評価基準</span>
+            <select id="pathMetric">
+              <option value="structure">構造的接続</option>
+              <option value="activity">最近の活動伝達</option>
+              <option value="functional">機能的関連（同期）</option>
+              <option value="learning">学習による結合変化</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>最低関連度 <strong id="pathThresholdValue">0.20</strong></span>
+            <input id="pathThreshold" type="range" min="0.05" max="0.85" step="0.05" value="0.20" />
+          </label>
+          <div class="button-grid">
+            <button class="primary" id="analyzePathBtn">選択領域から解析</button>
+            <button id="clearPathBtn">解析を解除</button>
+          </div>
+          <div id="pathAnalysisResult" class="path-analysis-result empty-state">領域を選択して解析してください。</div>
+          <h3 class="subheading">今回の伝播到達順</h3>
+          <div id="propagationTimeline" class="propagation-timeline"><div class="empty-state">刺激実行後に到達順を表示します。</div></div>
+        </section>
+
+        <section>
+          <h2>仮想介入</h2>
+          <p class="section-copy">選択領域の活動を強める・抑える・遮断し、結果の変化を比較します。</p>
+          <label class="field">
+            <span>介入方法</span>
+            <select id="interventionType">
+              <option value="suppress">活動を抑制</option>
+              <option value="boost">活動を促進</option>
+              <option value="block">完全遮断</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>介入強度 <strong id="interventionStrengthValue">0.60</strong></span>
+            <input id="interventionStrength" type="range" min="0.10" max="1.00" step="0.05" value="0.60" />
+          </label>
+          <div class="button-grid">
+            <button class="primary" id="applyInterventionBtn">選択領域へ適用</button>
+            <button id="clearInterventionsBtn">全介入を解除</button>
+          </div>
+          <div id="interventionStatus" class="intervention-status empty-state">介入はありません。</div>
+        </section>
+
+        <section>
+          <h2>領域別活動</h2>
+          <div id="regionActivity" class="region-activity"></div>
+        </section>
+
+        <section>
+          <h2>反応イベント</h2>
+          <div id="eventLog" class="event-log"></div>
+        </section>
+
+        <section>
+          <h2>実験記録</h2>
+          <label class="field">
+            <span>実験名</span>
+            <input id="experimentName" type="text" maxlength="50" placeholder="例：視覚刺激 3回反復" />
+          </label>
+          <label class="field">
+            <span>仮説・メモ</span>
+            <textarea id="experimentNote" maxlength="300" placeholder="例：反復によって視覚→統合→記憶の結合が強くなるか"></textarea>
+          </label>
+          <button class="primary full" id="saveExperimentBtn">現在結果を保存</button>
+          <div class="saved-list" id="savedExperiments"></div>
+        </section>
+
+        <section>
+          <h2>結果比較</h2>
+          <div class="compare-grid">
+            <select id="compareA"><option value="">比較A</option></select>
+            <select id="compareB"><option value="">比較B</option></select>
+          </div>
+          <div id="compareResult" class="compare-result empty-state">保存した実験を2件選択してください。</div>
+          <div class="button-grid compare-actions">
+            <button class="primary" id="showComparisonBtn">差分を画面表示</button>
+            <button id="clearComparisonBtn">差分表示を解除</button>
+          </div>
+          <button class="full sub-action" id="exportReportBtn">比較レポート（HTML）を書き出す</button>
+          <div class="file-actions">
+            <button class="full" id="exportBtn">JSONを書き出す</button>
+            <button class="full" id="importBtn">JSONを読み込む</button>
+            <input id="importInput" type="file" accept="application/json,.json" hidden />
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+
+  <div class="analysis-modal hidden" id="analysisModal" role="dialog" aria-modal="true" aria-labelledby="analysisTitle">
+    <div class="analysis-dialog">
+      <header class="analysis-header">
+        <div>
+          <p class="eyebrow">V011 / RESULT INTERPRETATION</p>
+          <h2 id="analysisTitle">実験結果の詳細分析</h2>
+          <p>発火時系列、到達時間、領域相関、興奮・抑制内訳、経路通過数、結合変化を同じ時間軸で確認します。</p>
+        </div>
+        <div class="analysis-header-actions">
+          <button id="refreshAnalysisBtn" type="button">再集計</button>
+          <button id="exportAnalysisBtn" type="button">分析レポート</button>
+          <button class="analysis-close" id="closeAnalysisBtn" type="button" aria-label="分析画面を閉じる">×</button>
+        </div>
+      </header>
+
+      <div class="analysis-toolbar">
+        <label>
+          <span>分析範囲</span>
+          <select id="analysisRange">
+            <option value="60">直近60 step</option>
+            <option value="120">直近120 step</option>
+            <option value="240" selected>直近240 step</option>
+            <option value="600">直近600 step</option>
+            <option value="1200">最大1,200 step</option>
+          </select>
+        </label>
+        <label>
+          <span>主領域</span>
+          <select id="analysisPrimaryRegion"></select>
+        </label>
+        <label>
+          <span>比較領域</span>
+          <select id="analysisSecondaryRegion"></select>
+        </label>
+        <label>
+          <span>結合経路</span>
+          <select id="analysisRouteSelect"></select>
+        </label>
+      </div>
+
+      <section class="analysis-cursor-card">
+        <div class="analysis-cursor-heading">
+          <div>
+            <strong>時間点の確認</strong>
+            <small id="analysisCursorSummary">記録がありません。</small>
+          </div>
+          <div>
+            <button id="analysisLiveBtn" type="button">最新へ</button>
+            <button id="analysisTo3DBtn" type="button">この時点を3D表示</button>
+          </div>
+        </div>
+        <input id="analysisCursor" type="range" min="0" max="0" step="1" value="0" aria-label="分析時間点" />
+        <div class="analysis-cursor-scale"><span>過去</span><strong id="analysisCursorLabel">step 0</strong><span>最新</span></div>
+      </section>
+
+      <div class="analysis-metrics">
+        <article><span>範囲内発火</span><strong id="analysisMetricSpikes">0</strong><small id="analysisMetricSpikesSub">平均 0.0/step</small></article>
+        <article><span>最大活動領域</span><strong id="analysisMetricRegion">—</strong><small id="analysisMetricRegionSub">0 spike</small></article>
+        <article><span>興奮／抑制</span><strong id="analysisMetricEI">—</strong><small id="analysisMetricEISub">発火内訳</small></article>
+        <article><span>最強経路</span><strong id="analysisMetricRoute">—</strong><small id="analysisMetricRouteSub">通過 0</small></article>
+        <article><span>最大相関</span><strong id="analysisMetricCorrelation">—</strong><small id="analysisMetricCorrelationSub">r = 0.00</small></article>
+        <article><span>最大結合変化</span><strong id="analysisMetricSynapse">—</strong><small id="analysisMetricSynapseSub">Δ 0.0000</small></article>
+      </div>
+
+      <section class="analysis-card analysis-interpretation">
+        <div class="analysis-card-heading"><h3>今回の結果の読み取り</h3><span>自動要約</span></div>
+        <div id="analysisInterpretation" class="analysis-copy">刺激またはシナリオを実行すると、観察結果をここに整理します。</div>
+      </section>
+
+      <div class="analysis-grid wide-left">
+        <section class="analysis-card">
+          <div class="analysis-card-heading"><h3>発火時系列</h3><span>全体＋選択領域</span></div>
+          <div class="analysis-canvas-stage timeline"><canvas id="analysisTimelineCanvas"></canvas></div>
+        </section>
+        <section class="analysis-card">
+          <div class="analysis-card-heading"><h3>刺激後の到達時間</h3><span>初回反応</span></div>
+          <div id="analysisArrivalTable" class="analysis-table-wrap"></div>
+        </section>
+      </div>
+
+      <div class="analysis-grid equal">
+        <section class="analysis-card">
+          <div class="analysis-card-heading"><h3>領域間の活動相関</h3><span>Pearson r</span></div>
+          <div class="analysis-canvas-stage matrix"><canvas id="analysisCorrelationCanvas"></canvas></div>
+          <p class="analysis-note">同時に増減する傾向を示します。直接接続や因果関係を意味するものではありません。</p>
+        </section>
+        <section class="analysis-card">
+          <div class="analysis-card-heading"><h3>興奮性・抑制性の内訳</h3><span>領域別発火</span></div>
+          <div id="analysisEITable" class="analysis-table-wrap tall"></div>
+        </section>
+      </div>
+
+      <div class="analysis-grid equal">
+        <section class="analysis-card">
+          <div class="analysis-card-heading"><h3>信号経路の通過数</h3><span>実験開始後の累計</span></div>
+          <div id="analysisRouteTable" class="analysis-table-wrap tall"></div>
+        </section>
+        <section class="analysis-card">
+          <div class="analysis-card-heading"><h3>結合強度の変化</h3><span>選択経路の履歴</span></div>
+          <div class="analysis-canvas-stage compact"><canvas id="analysisSynapseCanvas"></canvas></div>
+          <div id="analysisSynapseTable" class="analysis-table-wrap compact-table"></div>
+        </section>
+      </div>
+
+      <section class="analysis-card">
+        <div class="analysis-card-heading">
+          <h3>複数実験の重ね合わせ</h3>
+          <div class="analysis-overlay-selects">
+            <select id="analysisExperimentA"><option value="">比較実験A：なし</option></select>
+            <select id="analysisExperimentB"><option value="">比較実験B：なし</option></select>
+          </div>
+        </div>
+        <div class="analysis-canvas-stage overlay"><canvas id="analysisOverlayCanvas"></canvas></div>
+        <p class="analysis-note">現在の実行履歴と保存済み実験の発火推移を、長さをそろえて重ねています。</p>
+      </section>
+
+      <section class="analysis-disclaimer">
+        本画面の相関、到達時間、経路通過数、結合変化はv012概念モデル内部の計算結果です。人間の脳活動における因果関係、診断、治療効果を示すものではありません。
+      </section>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

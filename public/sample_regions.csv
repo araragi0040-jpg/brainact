@@ -1,0 +1,4 @@
+id,name,short,system,lobe,level,parent,functions,evidence,x,y,lateral,vertical,depth,count
+V1,一次視覚野（CSV例）,V1,感覚系,後頭葉,皮質,視覚系,初期視覚処理,CSVサンプル,0.07,0.15,0.55,0.10,-0.75,12
+HIP,海馬（CSV例）,海馬,記憶系,内側側頭葉,皮質下,内側側頭葉記憶系,記憶固定,CSVサンプル,0.50,0.76,0.32,-0.30,-0.05,12
+PFC,背外側前頭前野（CSV例）,dlPFC,実行制御系,前頭葉,皮質,前頭前野系,作業記憶・計画,CSVサンプル,0.65,0.18,0.50,0.25,0.72,14

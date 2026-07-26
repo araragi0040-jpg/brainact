@@ -7,6 +7,7 @@ import time
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -400,6 +401,12 @@ def simulate(request: SimulationRequest) -> dict[str, Any]:
         "routeStats": route_stats,
         "frames": frames,
     }
+
+
+@app.get("/", include_in_schema=False)
+def frontend_root() -> RedirectResponse:
+    # Vercelのpublic/index.htmlへ明示的に誘導する。
+    return RedirectResponse(url="/index.html", status_code=307)
 
 
 @app.get("/api")
