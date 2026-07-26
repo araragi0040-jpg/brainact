@@ -58,7 +58,7 @@ ADAPTERS: dict[str, EngineAdapter] = {
         id="native",
         name="Virtual Brain Native",
         scale="ニューロン／領域の概念モデル",
-        description="v015標準の独自Python計算エンジン。現在の全機能を最も忠実に処理します。",
+        description="v018標準の独自Python計算エンジン。現在の全機能を最も忠実に処理します。",
         package=None,
         execution_implemented=True,
         serverless_recommended=True,
@@ -98,11 +98,12 @@ ADAPTERS: dict[str, EngineAdapter] = {
         id="nest",
         name="NEST Simulator",
         scale="大規模スパイキングネットワーク",
-        description="大規模な点ニューロンネットワークへの変換を想定した初期ブリッジです。v015では互換性診断と接続設定書き出しまで対応します。",
+        description="PyNEST環境ではiaf_psc_alphaによる点ニューロンネットワークを直接計算します。Vercelでは専用計算サーバーへの接続を推奨します。",
         package="nest",
-        execution_implemented=False,
+        execution_implemented=True,
         serverless_recommended=False,
         supported_features=(
+            "PyNESTによる直接計算",
             "大規模ニューロン群",
             "興奮性／抑制性接続",
             "伝達遅延",
@@ -112,22 +113,35 @@ ADAPTERS: dict[str, EngineAdapter] = {
         limited_features=("ニューロンタイプはNESTモデル名へのマッピングが必要", "独自可塑性則は対応モデルの選定が必要"),
         unsupported_features=("Vercel Function内でのNEST実行",),
     ),
+    "regional-mass": EngineAdapter(
+        id="regional-mass",
+        name="Regional Mass Lite",
+        scale="脳領域／全脳ネットワーク",
+        description="TVB接続前でも領域レベルの実験フローを検証できる内蔵近似モデルです。The Virtual Brain本体ではありません。",
+        package=None,
+        execution_implemented=True,
+        serverless_recommended=True,
+        supported_features=("領域間結合", "連続活動", "Vercel直接計算", "仮想介入"),
+        limited_features=("出力は発火数ではなく活動相当値", "TVBの数値モデルとは異なる"),
+        unsupported_features=("TVBを名乗ること", "シナプス単位の計算"),
+    ),
     "tvb": EngineAdapter(
         id="tvb",
         name="The Virtual Brain",
         scale="脳領域／全脳ネットワーク",
-        description="19領域を接続行列へ集約し、全脳レベルの動力学へ変換する初期ブリッジです。v015では互換性診断と領域モデル書き出しまで対応します。",
+        description="19領域を接続行列へ集約し、tvb-libraryのGeneric2dOscillatorで全脳レベルの活動を直接計算します。",
         package="tvb",
-        execution_implemented=False,
+        execution_implemented=True,
         serverless_recommended=False,
         supported_features=(
+            "TVB Generic2dOscillator直接計算",
             "領域間接続行列",
             "領域座標",
             "伝達遅延候補",
             "領域活動の集約",
             "全脳時系列への変換候補",
         ),
-        limited_features=("個別ニューロン状態は領域平均へ集約", "独自介入は領域刺激パラメータへ変換"),
+        limited_features=("個別ニューロン状態は領域平均へ集約", "刺激・介入はTVB出力への領域制御層で反映", "TVB内部履歴はAPI要求ごとに再構築"),
         unsupported_features=("シナプス単位の直接表示", "Vercel Function内での長時間全脳計算"),
     ),
 }
@@ -194,10 +208,10 @@ def compatibility_report(
         warnings.append(f"Pythonパッケージ「{adapter.package}」は現在の実行環境で検出されていません。")
         score -= 20
     if not adapter.execution_implemented:
-        warnings.append("v015ではこの外部エンジンの直接計算は未実装です。互換性診断と変換設定書き出しを利用してください。")
+        warnings.append("v018ではこの外部エンジンの直接計算は未実装です。互換性診断と変換設定書き出しを利用してください。")
 
     return {
-        "version": "v015",
+        "version": "v018",
         "engine": adapter.public_dict(),
         "score": max(0, min(100, score)),
         "summary": {
@@ -267,7 +281,7 @@ def export_manifest(
 
     manifest = {
         "schema": "virtual-brain-adapter-manifest-v1",
-        "version": "v015",
+        "version": "v018",
         "targetEngine": engine_id,
         "adapter": adapter.public_dict(),
         "compatibility": report,
@@ -290,12 +304,12 @@ def export_manifest(
 def starter_code(engine_id: str, manifest: dict[str, Any]) -> str:
     network = manifest["network"]
     if engine_id == "brian2":
-        return f'''# v015 Brian2 translation starter\nfrom brian2 import *\n\nstart_scope()\ndefaultclock.dt = 0.1*ms\nN = {network["nodeCount"]}\neqs = """\ndv/dt = (-v) / (10*ms) : 1\n"""\nneurons = NeuronGroup(N, eqs, threshold="v > 1", reset="v = 0", refractory=2*ms, method="euler")\n# TODO: manifestのedge情報をSynapsesへ対応付ける\nrun(100*ms)\n'''
+        return f'''# v018 Brian2 translation starter\nfrom brian2 import *\n\nstart_scope()\ndefaultclock.dt = 0.1*ms\nN = {network["nodeCount"]}\neqs = """\ndv/dt = (-v) / (10*ms) : 1\n"""\nneurons = NeuronGroup(N, eqs, threshold="v > 1", reset="v = 0", refractory=2*ms, method="euler")\n# TODO: manifestのedge情報をSynapsesへ対応付ける\nrun(100*ms)\n'''
     if engine_id == "nest":
-        return f'''# v015 NEST translation starter\nimport nest\n\nnest.ResetKernel()\nnodes = nest.Create("iaf_psc_alpha", {network["nodeCount"]})\n# TODO: manifestの接続をConnectへ対応付ける\nnest.Simulate(100.0)\n'''
+        return f'''# v018 NEST translation starter\nimport nest\n\nnest.ResetKernel()\nnodes = nest.Create("iaf_psc_alpha", {network["nodeCount"]})\n# TODO: manifestの接続をConnectへ対応付ける\nnest.Simulate(100.0)\n'''
     if engine_id == "tvb":
-        return f'''# v015 TVB translation starter\n# pip install tvb-library\nfrom tvb.simulator.lab import connectivity, coupling, integrators, models, simulator\n\n# TODO: {len(network["regions"])}領域のweights / tract_lengths / centresをmanifestから構築\n# conn = connectivity.Connectivity(...)\n# sim = simulator.Simulator(model=models.ReducedWongWang(), connectivity=conn, ...)\n'''
-    return '''# v015 native engine\n# 現在のアプリ／APIでそのまま実行できます。\n'''
+        return f'''# v018 TVB translation starter\n# pip install tvb-library\nfrom tvb.simulator.lab import connectivity, coupling, integrators, models, simulator\n\n# TODO: {len(network["regions"])}領域のweights / tract_lengths / centresをmanifestから構築\n# conn = connectivity.Connectivity(...)\n# sim = simulator.Simulator(model=models.ReducedWongWang(), connectivity=conn, ...)\n'''
+    return '''# v018 native engine\n# 現在のアプリ／APIでそのまま実行できます。\n'''
 
 
 def dumps_manifest(manifest: dict[str, Any]) -> str:

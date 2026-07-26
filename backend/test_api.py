@@ -10,14 +10,14 @@ def test_health() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["status"] == "ok"
-    assert payload["version"] == "v015"
+    assert payload["version"] == "v018"
     assert "brian2" in payload
 
 
 def test_diagnostics() -> None:
     response = client.get("/api/v1/diagnostics")
     assert response.status_code == 200
-    assert response.json()["version"] == "v015"
+    assert response.json()["version"] == "v018"
 
 
 def test_engine_adapters() -> None:
@@ -36,7 +36,7 @@ def test_native_self_test() -> None:
 
 def test_native_simulation() -> None:
     request = {
-        "version": "v015",
+        "version": "v018",
         "engine_id": "native",
         "steps": 2,
         "dt": 0.02,
@@ -110,3 +110,32 @@ def test_brian2_self_test_reports_missing_package_when_unavailable() -> None:
     else:
         assert response.status_code == 409
         assert "Brian2" in response.json()["detail"]
+
+
+def test_compare_native_and_missing_engine() -> None:
+    base = {
+        "version": "v018", "engine_id": "native", "steps": 2, "dt": 0.02, "rng_state": 42,
+        "nodes": [{"id":0,"regionId":"A","type":"excitatory","voltage":1.2,"baseThreshold":1.0,"leak":.88,"refractory":0,"refractoryBase":2,"fatigue":0,"fatigueRecovery":.018,"fatigueGain":.025,"adaptation":0,"adaptationRecovery":.055,"adaptationGain":.018,"homeostaticOffset":0,"homeostaticTarget":.045}],
+        "edges": [], "regions": ["A"], "config": {"noise": False, "plasticity": False}
+    }
+    response = client.post("/api/v1/compare", json={"engine_ids":["native","brian2"],"request":base})
+    assert response.status_code == 200, response.text
+    data=response.json(); assert data["requestedCount"] == 2; assert data["availableCount"] >= 1
+
+
+def test_regional_mass_self_test() -> None:
+    response=client.post("/api/v1/engines/regional-mass/self-test",json={})
+    assert response.status_code==200
+    assert response.json()["engineId"]=="regional-mass-lite-v1"
+
+
+def test_regional_mass_simulation() -> None:
+    request={
+        "version":"v018","engine_id":"regional-mass","steps":3,"dt":0.02,"rng_state":1,
+        "nodes":[{"id":0,"regionId":"A","type":"excitatory","voltage":0.1,"baseThreshold":1.0}],
+        "edges":[],"regions":["A"],"config":{},
+        "stimulus_sequence":{"phase":"active","regions":["A"],"strength":1.5,"duration":2,"remaining":2,"repeats":1,"currentRepeat":1}
+    }
+    response=client.post("/api/v1/simulate",json=request)
+    assert response.status_code==200,response.text
+    data=response.json(); assert data["engineId"]=="regional-mass"; assert len(data["frames"])==3

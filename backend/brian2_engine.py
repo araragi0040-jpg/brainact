@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Brian2 execution bridge for Virtual Brain Lab v015.
+"""Brian2 execution bridge for Virtual Brain Lab v018.
 
 The bridge intentionally uses Brian2's NumPy code generation target so that the
 first integration works without a local C/C++ toolchain. It translates the
@@ -527,7 +527,7 @@ def simulate_brian2(request: Any) -> dict[str, Any]:
 
     elapsed_ms = (time.perf_counter() - started) * 1000.0
     return {
-        "version": "v015",
+        "version": "v018",
         "engine": BRIAN2_ENGINE_ID,
         "engineId": "brian2",
         "engineDetails": {

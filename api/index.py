@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import math
 import os
 import platform
@@ -12,6 +13,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.brian2_engine import package_available as brian2_available, package_version as brian2_version, self_test as brian2_self_test, simulate_brian2
+from backend.nest_engine import package_available as nest_available, package_version as nest_version, self_test as nest_self_test, simulate_nest
+from backend.nest_engine import package_available as nest_available, package_version as nest_version, self_test as nest_self_test, simulate_nest
+from backend.tvb_engine import package_available as tvb_available, package_version as tvb_version, self_test as tvb_self_test, simulate_tvb
+from backend.regional_mass_engine import self_test as regional_mass_self_test, simulate_regional_mass
+from backend.engine_compare import build_comparison, summarize_result
 from backend.engine_adapters import (
     compatibility_report,
     export_manifest,
@@ -19,7 +25,7 @@ from backend.engine_adapters import (
     list_adapters,
 )
 
-APP_VERSION = "v015"
+APP_VERSION = "v018"
 ENGINE_VERSION = "engine-adapter-v2"
 DT_DEFAULT = 0.01
 UINT32_MAX_PLUS_ONE = 4294967296.0
@@ -27,7 +33,7 @@ UINT32_MAX_PLUS_ONE = 4294967296.0
 app = FastAPI(
     title="Virtual Brain Lab Python Engine",
     version=APP_VERSION,
-    description="仮想神経回路v015用の公開対応計算エンジン。Native計算と任意導入のBrian2直接計算に対応します。",
+    description="仮想神経回路v018用の統合計算エンジン。Native、Brian2、NEST、TVB、内蔵領域質量モデルに対応します。",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json",
@@ -89,6 +95,13 @@ class ValidateRequest(BaseModel):
     nodes: list[dict[str, Any]] = Field(default_factory=list)
     edges: list[dict[str, Any]] = Field(default_factory=list)
     regions: list[str] = Field(default_factory=list)
+
+
+class EngineComparisonRequest(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    engine_ids: list[str] = Field(default_factory=lambda: ["native"])
+    request: dict[str, Any]
 
 
 class AdapterInspectRequest(BaseModel):
@@ -433,15 +446,10 @@ def simulate(request: SimulationRequest) -> dict[str, Any]:
     if adapter.id != request.engine_id:
         raise HTTPException(status_code=404, detail=f"未知の計算エンジンです: {request.engine_id}")
     if not adapter.executable:
-        if adapter.id == "brian2" and not adapter.package_detected:
-            raise HTTPException(
-                status_code=409,
-                detail="Brian2が未導入です。ローカル環境で requirements-brian2.txt をインストールしてください。",
-            )
-        raise HTTPException(
-            status_code=409,
-            detail=f"{adapter.name}はv015では互換性診断・変換設定書き出しまで対応しています。",
-        )
+        if adapter.execution_implemented and adapter.package and not adapter.package_detected:
+            requirement = {"brian2": "requirements-brian2.txt", "nest": "requirements-nest.txt", "tvb": "requirements-tvb.txt"}.get(adapter.id, "対応パッケージ")
+            raise HTTPException(status_code=409, detail=f"{adapter.name}の直接計算コードは実装済みですが、現在のAPI環境にパッケージがありません。{requirement}を導入してください。")
+        raise HTTPException(status_code=409, detail=f"{adapter.name}はv018では互換性診断・変換設定書き出しまで対応しています。")
     if adapter.id == "brian2":
         try:
             return simulate_brian2(request)
@@ -449,6 +457,21 @@ def simulate(request: SimulationRequest) -> dict[str, Any]:
             raise
         except Exception as exc:
             raise HTTPException(status_code=422, detail=f"Brian2計算に失敗しました: {exc}") from exc
+    if adapter.id == "nest":
+        try:
+            return simulate_nest(request)
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail=f"NEST計算に失敗しました: {exc}") from exc
+    if adapter.id == "tvb":
+        try:
+            return simulate_tvb(request)
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail=f"TVB計算に失敗しました: {exc}") from exc
+    if adapter.id == "regional-mass":
+        try:
+            return simulate_regional_mass(request)
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail=f"領域質量モデル計算に失敗しました: {exc}") from exc
     return simulate_native(request)
 
 
@@ -471,6 +494,22 @@ def engine_self_test(engine_id: str) -> dict[str, Any]:
             return brian2_self_test()
         except Exception as exc:
             raise HTTPException(status_code=422, detail=f"Brian2セルフテストに失敗しました: {exc}") from exc
+    if engine_id == "nest":
+        if not nest_available():
+            raise HTTPException(status_code=409, detail="NEST Simulatorが未導入です。requirements-nest.txtまたは公式NEST環境を使用してください。")
+        try:
+            return nest_self_test()
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail=f"NESTセルフテストに失敗しました: {exc}") from exc
+    if engine_id == "tvb":
+        if not tvb_available():
+            raise HTTPException(status_code=409, detail="tvb-libraryが未導入です。requirements-tvb.txtを使用してください。")
+        try:
+            return tvb_self_test()
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail=f"TVBセルフテストに失敗しました: {exc}") from exc
+    if engine_id == "regional-mass":
+        return regional_mass_self_test()
     raise HTTPException(status_code=409, detail=f"{adapter.name}の直接計算セルフテストは未実装です。")
 
 
@@ -489,6 +528,7 @@ def api_root() -> dict[str, Any]:
         "docs": "/api/docs",
         "medicalUse": False,
         "adapters": "/api/v1/engines",
+        "comparison": "/api/v1/compare",
         "deployment": {
             "runtime": "vercel-python" if os.getenv("VERCEL") else "local-python",
             "region": os.getenv("VERCEL_REGION", "local"),
@@ -513,6 +553,8 @@ def diagnostics() -> dict[str, Any]:
         "medicalUse": False,
         "adapters": list_adapters(),
         "brian2": {"available": brian2_available(), "version": brian2_version()},
+        "nest": {"available": nest_available(), "version": nest_version()},
+        "tvb": {"available": tvb_available(), "version": tvb_version()},
     }
 
 
@@ -526,6 +568,8 @@ def health() -> dict[str, Any]:
         "medicalUse": False,
         "adapters": list_adapters(),
         "brian2": {"available": brian2_available(), "version": brian2_version()},
+        "nest": {"available": nest_available(), "version": nest_version()},
+        "tvb": {"available": tvb_available(), "version": tvb_version()},
         "deployment": {
             "runtime": "vercel-python" if os.getenv("VERCEL") else "local-python",
             "region": os.getenv("VERCEL_REGION", "local"),
@@ -540,7 +584,7 @@ def engines() -> dict[str, Any]:
         "version": APP_VERSION,
         "defaultEngine": "native",
         "engines": list_adapters(),
-        "note": "v015ではBrian2を任意導入すると直接計算できます。NESTとTVBは診断・書き出し段階です。",
+        "note": "v018ではNativeとRegional Mass Liteを標準実行でき、Brian2・NEST・TVBは各パッケージ導入環境で直接計算できます。",
     }
 
 
@@ -556,6 +600,32 @@ def export_engine_manifest(engine_id: str, request: AdapterInspectRequest) -> di
     if engine_id not in {item["id"] for item in list_adapters()}:
         raise HTTPException(status_code=404, detail=f"未知の計算エンジンです: {engine_id}")
     return export_manifest(engine_id, request.nodes, request.edges, request.regions, request.config)
+
+
+@app.post("/api/v1/compare")
+def compare_engines(request: EngineComparisonRequest) -> dict[str, Any]:
+    ids = list(dict.fromkeys(str(item) for item in request.engine_ids if str(item).strip()))[:5]
+    if len(ids) < 2:
+        raise HTTPException(status_code=422, detail="比較には2件以上のengine_idsが必要です。")
+    base_payload = copy.deepcopy(request.request)
+    regions = [str(item) for item in base_payload.get("regions", [])]
+    results: list[dict[str, Any]] = []
+    for engine_id in ids:
+        payload = copy.deepcopy(base_payload)
+        payload["engine_id"] = engine_id
+        payload["version"] = APP_VERSION
+        try:
+            simulation_request = SimulationRequest(**payload)
+            value = simulate(simulation_request)
+            results.append(summarize_result(engine_id, value, regions))
+        except HTTPException as exc:
+            results.append({"engineId": engine_id, "status": "unavailable", "error": str(exc.detail), "httpStatus": exc.status_code})
+        except Exception as exc:
+            results.append({"engineId": engine_id, "status": "error", "error": str(exc)})
+    response = build_comparison(results, regions)
+    response["version"] = APP_VERSION
+    response["steps"] = int(base_payload.get("steps", 1))
+    return response
 
 
 @app.post("/api/v1/validate")

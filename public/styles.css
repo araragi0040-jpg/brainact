@@ -476,7 +476,7 @@ body.analysis-open { overflow: hidden !important; }
   #dataSourceBadge { display: none; }
 }
 
-/* v015: Python計算エンジン接続 */
+/* v018: Python計算エンジン接続 */
 .engine-status { margin-top: 10px; line-height: 1.55; }
 .engine-status.active { border-color: rgba(77,217,196,.30); background: rgba(77,217,196,.06); color: var(--text); }
 .engine-status.busy { border-color: rgba(255,200,103,.32); background: rgba(255,200,103,.055); color: #ffe4ac; }
@@ -492,7 +492,7 @@ body.analysis-open { overflow: hidden !important; }
   #engineBadge { display: none; }
 }
 
-/* v015: GitHub / Vercel deployment diagnostics */
+/* v018: GitHub / Vercel deployment diagnostics */
 .deployment-status { margin-top: 9px; padding: 10px 11px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.025); font-size: 10px; line-height: 1.55; color: var(--muted); overflow-wrap: anywhere; }
 .deployment-status strong { display: block; color: var(--text); font-size: 11px; margin-bottom: 3px; }
 .deployment-status small { display: block; color: var(--muted); }
@@ -500,7 +500,7 @@ body.analysis-open { overflow: hidden !important; }
 .deployment-status.warn { border-color: rgba(255,200,103,.28); background: rgba(255,200,103,.06); }
 .deployment-status.error { border-color: rgba(255,127,145,.28); background: rgba(255,127,145,.06); }
 
-/* v015: external simulation engine adapters */
+/* v018: external simulation engine adapters */
 .adapter-status {
   margin: 8px 0 10px;
   padding: 10px 11px;
